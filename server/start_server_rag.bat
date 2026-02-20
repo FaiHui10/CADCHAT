@@ -84,7 +84,6 @@ echo.
 REM Start Flask RAG service
 echo [Step 4/4] Starting Flask RAG service...
 echo Port: 5000
-echo Model: qwen3:1.7b
 echo Embedding Model: bge-m3
 echo Command Files: autocad_basic_commands.txt, lisp_commands.txt
 echo.

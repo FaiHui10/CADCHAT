@@ -1,6 +1,6 @@
 """
-CADChat 云端客户端 - WSL 版本
-连接到 WSL 中运行的云端服务
+CADChat 云端客户端 - 云服务版本
+连接到云端运行的CADChat服务
 """
 
 import os
@@ -10,16 +10,22 @@ from typing import Dict, List, Optional
 from datetime import datetime
 import sqlite3
 
-SERVER_URL = os.getenv('CADCHAT_SERVER_URL', 'http://localhost:5000')
+from client_config import get_config
 
 class CloudClient:
-    """云端客户端（WSL 版本）"""
+    """云端客户端（云服务版本）"""
     
     def __init__(self, server_url: str = None):
+        # 使用配置管理器获取服务端URL
         if server_url is None:
-            server_url = SERVER_URL
+            config = get_config()
+            server_url = config.server_url
         self.server_url = server_url.rstrip('/')
-        self.cache_db = 'local_cache.db'
+        
+        # 使用配置管理器获取缓存配置
+        config = get_config()
+        self.cache_db = config.cache_db_path
+        self.timeout = config.request_timeout
         self.init_cache()
     
     def init_cache(self):
@@ -51,7 +57,7 @@ class CloudClient:
             response = requests.post(
                 f'{self.server_url}/api/query',
                 json={'requirement': requirement},
-                timeout=30  # LLM 可能需要更长时间
+                timeout=self.timeout
             )
             
             if response.status_code == 200:
@@ -80,7 +86,7 @@ class CloudClient:
                     'description': description,
                     'tags': tags or []
                 },
-                timeout=30
+                timeout=self.timeout
             )
             
             if response.status_code == 200:

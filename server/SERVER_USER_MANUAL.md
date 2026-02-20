@@ -15,13 +15,12 @@
 
 ## 简介
 
-CADChat 服务端是一个本地服务器，提供 CAD 命令匹配和 LISP 代码生成服务。服务端使用 Ollama + bge-m3 嵌入模型进行向量检索，使用 Qwen3 1.7B 模型进行语义匹配，支持 RAG（检索增强生成）技术。
+CADChat 服务端是一个本地服务器，提供 CAD 命令匹配和 LISP 代码生成服务。服务端使用 Ollama + bge-m3 嵌入模型进行向量检索，支持 RAG（检索增强生成）技术。
 
 ### 主要功能
 
 - **RAG 向量检索**：使用 bge-m3 嵌入模型进行高效的语义检索
 - **基本命令库**：优先匹配 AutoCAD 原生命令，提高响应速度
-- **LLM 语义匹配**：使用 Qwen3 1.7B 模型进行语义匹配
 - **用户代码管理**：支持用户保存和检索自定义 LISP 程序
 - **RESTful API**：提供标准的 HTTP API 接口
 - **GPU 加速**：支持 NVIDIA GPU 加速推理
@@ -93,13 +92,13 @@ ollama>=0.1.0
 #### 方法 1：使用 Ollama CLI
 
 ```powershell
-ollama pull qwen3:1.7b
+ollama pull bge-m3
 ```
 
 #### 方法 2：手动下载
 
 1. 访问 Hugging Face
-2. 下载 Qwen3 1.7B 模型文件
+2. 下载 bge-m3 嵌入模型文件
 3. 使用 Ollama 导入模型
 
 ### 步骤 5：安装 Python 依赖
@@ -148,9 +147,7 @@ python cloud_server_rag.py
 ```json
 {
   "status": "ok",
-  "llm_available": true,
-  "llm_engine": "Ollama",
-  "model": "qwen3:1.7b"
+  "embedding_model": "bge-m3"
 }
 ```
 
@@ -174,7 +171,7 @@ python cloud_server_rag.py
          │
 ┌────────▼────────┐
 │   Ollama (Windows)  │
-│   Qwen3 1.7B    │
+│   bge-m3       │
 │   端口: 11434   │
 │   GPU 加速 ✓        │
 │   RTX 5060 ✓       │
@@ -268,9 +265,6 @@ GET /api/health
   "status": "ok",
   "message": "Flask service is running",
   "embedding_model": "bge-m3",
-  "llm_engine": "Ollama",
-  "llm_model": "qwen3:1.7b",
-  "llm_available": true,
   "commands_count": 200
 }
 ```
@@ -316,9 +310,6 @@ GET /api/stats
 {
   "total_commands": 200,
   "embedding_model": "bge-m3",
-  "llm_engine": "Ollama",
-  "llm_model": "qwen3:1.7b",
-  "llm_available": true
 }
 ```
 
@@ -611,7 +602,7 @@ ollama list
 ```
 2. 重新下载模型：
 ```powershell
-ollama pull qwen3:1.7b
+ollama pull bge-m3
 ```
 3. 检查 GPU 内存
 4. 使用 CPU 模式

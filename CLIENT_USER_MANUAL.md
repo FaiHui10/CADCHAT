@@ -73,16 +73,55 @@ pip install requests
 
 ### 步骤 3：启动服务器
 
-在另一个终端中，启动服务器：
+根据部署需求选择相应服务器：
+
+#### 选择一：局域网服务器（本地RAG）
+
+适用于内网环境或对数据安全要求较高的场景。
+注意：此部署方式不使用Docker，直接运行Python脚本。
 
 ```powershell
 cd server
 start_server_rag.bat
 ```
 
-### 步骤 4：启动客户端
+#### 选择二：阿里云服务器（百炼平台）
+
+适用于云端部署或无高性能硬件的场景。
+此部署方式支持Docker容器化部署。
 
 ```powershell
+cd aliserver
+start_server_bailian.bat
+```
+
+### 步骤 4：配置客户端
+
+1. **复制配置文件**
+   ```powershell
+   copy .env.example .env
+   ```
+
+2. **编辑配置文件**
+   ```powershell
+   # 编辑 .env 文件，设置服务端URL
+   notepad .env
+   ```
+   
+   修改服务端URL配置：
+   ```env
+   CADCHAT_SERVER_URL=http://localhost:5000  # 本地测试
+   # 或
+   CADCHAT_SERVER_URL=http://your-ecs-ip:5000  # ECS部署后
+   ```
+
+### 步骤 5：启动客户端
+
+```powershell
+# 方法1：使用批处理脚本
+start_client_updated.bat
+
+# 方法2：直接运行Python脚本
 python main_gui_cloud.py
 ```
 

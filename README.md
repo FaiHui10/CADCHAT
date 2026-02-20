@@ -1,12 +1,12 @@
 # CAD智能助手
 
-基于本地 Ollama 和 Qwen3 1.7B 模型的 CAD 助手，支持 AutoCAD 和中望 CAD，通过本地推理引擎提供智能命令匹配。
+基于本地 Ollama 和 bge-m3 嵌入模型的 CAD 助手，支持 AutoCAD 和中望 CAD，通过本地向量检索提供智能命令匹配。
 
 ## 功能特点
 
 - **本地部署**：完全本地运行，数据安全
 - **智能命令匹配**：内置 200+ 条 AutoCAD 基础命令，优先使用内置命令
-- **LLM 智能匹配**：使用本地 LLM（Qwen3 1.7B）进行用户需求与已有代码的智能匹配
+- **RAG 向量检索**：使用 bge-m3 嵌入模型进行语义匹配
 - **GPU 加速**：支持 NVIDIA 显卡加速，性能提升 5-20 倍
 - **自定义别名**：支持用户自定义命令别名
 - **代码存储**：保存生成的代码，支持历史推荐
@@ -31,9 +31,16 @@
 - **CUDA**：12.0 或更高版本（如果使用 GPU）
 - **CAD 软件**：AutoCAD 2010 或更高版本，或中望 CAD 2010 或更高版本
 
-## 快速开始
+## 部署方式
 
-### 步骤 1：安装 Ollama
+本项目支持两种部署方式，可根据需求选择：
+
+### 方式一：局域网部署（本地RAG）
+
+适用于内网环境或对数据安全要求较高的场景。
+注意：此部署方式不使用Docker，直接运行Python脚本。
+
+#### 步骤 1：安装 Ollama
 
 运行安装脚本：
 
@@ -46,25 +53,89 @@ install_ollama_china.bat
 
 1. 访问 [Ollama 官网](https://ollama.ai/)
 2. 下载并安装 Ollama
-3. 下载模型：`ollama pull qwen3:1.7b`
+3. 下载嵌入模型：`ollama pull bge-m3`
 
-### 步骤 2：安装 Python 依赖
+#### 步骤 2：安装 Python 依赖
 
 ```powershell
 cd server
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-### 步骤 3：启动服务端
+#### 步骤 3：启动服务端
 
 ```powershell
 cd server
 start_server_rag.bat
 ```
 
-### 步骤 4：启动客户端
+### 方式二：阿里云部署（百炼平台）
+
+适用于云端部署或无高性能硬件的场景。
+此部署方式支持Docker容器化部署。
+
+#### 步骤 1：安装 Python 依赖
 
 ```powershell
+cd aliserver
+pip install -r requirements.txt
+```
+
+#### 步骤 2：配置阿里云百炼平台
+
+```powershell
+copy .env.example .env
+# 编辑 .env 文件，填入阿里云百炼平台的APP ID和API密钥
+```
+
+#### 步骤 3：启动服务端
+
+**方法1：直接运行**
+```powershell
+cd aliserver
+start_server_bailian.bat
+```
+
+**方法2：Docker部署**
+```bash
+cd aliserver
+docker build -t cadchat-aliyun-server .
+docker run -d -p 5000:5000 --env-file .env cadchat-aliyun-server
+```
+
+**方法3：Docker Compose部署**
+```bash
+cd aliserver
+docker-compose up -d
+```
+
+### 步骤 4：配置客户端
+
+1. **复制配置文件**
+   ```powershell
+   copy .env.example .env
+   ```
+
+2. **编辑配置文件**
+   ```powershell
+   # 编辑 .env 文件，设置服务端URL
+   notepad .env
+   ```
+   
+   修改服务端URL配置：
+   ```env
+   CADCHAT_SERVER_URL=http://localhost:5000  # 本地测试
+   # 或
+   CADCHAT_SERVER_URL=http://your-ecs-ip:5000  # ECS部署后
+   ```
+
+### 步骤 5：启动客户端
+
+```powershell
+# 方法1：使用批处理脚本
+start_client_updated.bat
+
+# 方法2：直接运行Python脚本
 python main_gui_cloud.py
 ```
 
@@ -75,21 +146,39 @@ CADCHAT/
 ├── CLIENT_USER_MANUAL.md          # 客户端用户手册
 ├── README.md                     # 项目说明（本文件）
 ├── cad_connector.py               # CAD 连接器
+├── deployment_comparison_guide.md # 部署方式对比指南
+├── deployment_configuration_guide.md # 部署配置指南
+├── deployment_decision_guide.md   # 部署决策指南
+├── deployment_summary.md         # 部署方式总结
 ├── cloud_client.py               # 云客户端
 ├── kimi_browser.py               # Kimi 浏览器
 ├── main_gui_cloud.py             # 主 GUI 客户端主程序
-└── start_client.bat              # 启动客户端脚本
-
-server/
-├── SERVER_USER_MANUAL.md         # 服务端用户手册
-├── autocad_basic_commands.txt    # 基本命令库
-├── lisp_commands.txt             # LISP 命令库
-├── cloud_server_rag.py          # Flask 服务器主程序
-├── requirements.txt             # Python 依赖
-├── start_server_rag.bat          # 启动服务器脚本
-├── stop_server.bat              # 停止服务器脚本
-├── install_bge_m3.bat           # 安装嵌入模型脚本
-└── user_codes/                  # 用户代码目录
+├── client_config.py              # 客户端配置管理器
+├── client_requirements.txt       # 客户端Python依赖
+├── start_client.bat              # 启动客户端脚本
+├── start_client_updated.bat      # 更新版启动客户端脚本
+├── .env.example                  # 客户端环境配置示例
+├── server/                       # 局域网服务端目录
+│   ├── SERVER_USER_MANUAL.md     # 服务端用户手册
+│   ├── autocad_basic_commands.txt # 基本命令库
+│   ├── lisp_commands.txt         # LISP 命令库
+│   ├── cloud_server_rag.py      # 基于本地RAG的Flask服务器
+│   ├── requirements.txt          # Python 依赖
+│   ├── start_server_rag.bat      # 启动本地RAG服务器脚本
+│   ├── stop_server.bat           # 停止服务器脚本
+│   ├── install_bge_m3.bat        # 安装嵌入模型脚本
+│   └── user_codes/              # 用户代码目录
+└── aliserver/                    # 阿里云服务端目录
+    ├── aliyun_bailian_adapter.py # 阿里云百炼平台适配器
+    ├── cloud_server_bailian.py   # 基于百炼平台的Flask服务器
+    ├── start_server_bailian.bat  # 启动百炼平台服务器脚本
+    ├── Dockerfile               # Docker构建文件（阿里云部署专用）
+    ├── docker-compose.yml       # Docker Compose配置（阿里云部署专用）
+    ├── requirements.txt         # Python 依赖
+    ├── user_codes/             # 用户代码目录
+    ├── autocad_basic_commands.txt # AutoCAD基础命令库
+    ├── lisp_commands.txt       # LISP命令库
+    └── .env.example           # 阿里云服务端环境配置示例
 ```
 
 ## 使用指南
@@ -132,19 +221,20 @@ stop_server.bat
 ### 用户手册
 
 - **[客户端用户手册](CLIENT_USER_MANUAL.md)**：客户端使用指南
-- **[服务端用户手册](server/SERVER_USER_MANUAL.md)**：服务端使用指南
+- **[局域网服务端手册](server/SERVER_USER_MANUAL.md)**：局域网服务端使用指南
+- **[阿里云服务端手册](aliserver/SERVER_USER_MANUAL.md)**：阿里云服务端使用指南
 
 ## 工作流程
 
 ```
-用户需求 → 基本命令库 → 数据库关键词 → Qwen3 LLM → Kimi 生成 LISP
+用户需求 → 基本命令库 → 数据库关键词 → 向量检索 → Kimi 生成 LISP
 ```
 
 ### 优先级
 
 1. **基本命令库**：优先匹配 AutoCAD 原生命令（200+ 命令）
 2. **数据库关键词**：在已有 LISP 代码中搜索
-3. **Qwen3 LLM**：语义匹配已有代码
+3. **向量检索**：使用 bge-m3 语义匹配已有代码
 4. **Kimi**：生成新的 LISP 代码
 
 ## 常见问题
@@ -173,7 +263,9 @@ stop_server.bat
 
 ### Q4: 如何添加自定义命令？
 
-**A**: 编辑 `server/autocad_basic_commands.txt` 文件，在文件末尾添加新命令：
+**A**: 编辑对应部署方式的命令文件：
+- 局域网部署：`server/autocad_basic_commands.txt`
+- 阿里云部署：`aliserver/autocad_basic_commands.txt`
 
 ```
 命令名称|描述|快捷键|命令类型
@@ -183,7 +275,9 @@ stop_server.bat
 
 ### Q5: 如何添加 LISP 程序描述？
 
-**A**: 编辑 `server/lisp_commands.txt` 文件，添加 LISP 程序的功能描述：
+**A**: 编辑对应部署方式的命令文件：
+- 局域网部署：`server/lisp_commands.txt`
+- 阿里云部署：`aliserver/lisp_commands.txt`
 
 ```
 命令名称|描述|快捷键|lisp
@@ -202,7 +296,7 @@ stop_server.bat
 ### 服务端
 
 - **Web 框架**：Flask
-- **LLM 引擎**：Ollama + Qwen3 1.7B
+- **向量引擎**：Ollama + bge-m3
 - **数据库**：SQLite
 - **CORS 支持**：flask-cors
 
@@ -224,7 +318,7 @@ stop_server.bat
          │
 ┌────────▼────────┐
 │   Ollama (Windows)  │
-│   Qwen3 1.7B    │
+│   bge-m3       │
 │   端口: 11434   │
 │   GPU 加速 ✓        │
 │   RTX 5060 ✓       │
@@ -238,7 +332,8 @@ stop_server.bat
 
 如有问题，请查看：
 - [客户端用户手册](CLIENT_USER_MANUAL.md)
-- [服务端用户手册](server/SERVER_USER_MANUAL.md)
+- [局域网服务端手册](server/SERVER_USER_MANUAL.md)
+- [阿里云服务端手册](aliserver/SERVER_USER_MANUAL.md)
 
 ## 许可证
 

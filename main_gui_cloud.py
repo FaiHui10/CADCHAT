@@ -14,9 +14,7 @@ from datetime import datetime
 from cad_connector import CADConnector
 from kimi_browser import KimiBrowser
 from cloud_client import CloudClient
-
-
-SERVER_URL = os.getenv('CADCHAT_SERVER_URL', 'http://localhost:5000')
+from client_config import get_config
 
 
 class CADChatGUI:
@@ -30,7 +28,10 @@ class CADChatGUI:
         
         self.cad_connector = CADConnector()
         self.kimi_browser = None
-        self.cloud_client = CloudClient(SERVER_URL)
+        
+        # 从配置管理器获取服务端URL
+        config = get_config()
+        self.cloud_client = CloudClient(config.server_url)
         
         self.is_connected = False
         self.is_browser_ready = False

@@ -19,7 +19,6 @@ from watchdog.events import FileSystemEventHandler
 
 # Ollama 配置
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen3:1.7b')
 EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'bge-m3')
 
 # 命令库配置
@@ -394,97 +393,8 @@ class CommandEmbeddings:
         """获取所有命令"""
         return self.commands
 
-class LLMMatcher:
-    """LLM 精确匹配器"""
-    
-    def __init__(self, api_url: str, model: str):
-        self.api_url = api_url
-        self.model = model
-        self.available = False
-    
-    def check_available(self):
-        """检查 LLM 是否可用"""
-        try:
-            response = requests.get(f"{self.api_url}/api/tags", timeout=5)
-            if response.status_code == 200:
-                self.available = True
-                return True
-            return False
-        except Exception as e:
-            print(f"[LLM检查] 错误: {e}")
-            self.available = False
-            return False
-    
-    def match(self, requirement: str, commands: List[Dict]) -> Optional[Dict]:
-        """使用 LLM 从少量命令中选择最匹配的"""
-        if not self.available or not commands:
-            return None
-        
-        try:
-            commands_desc = "\n".join([
-                f"命令 {i+1}: {cmd['description']} (命令: {cmd['command']}, 别名: {cmd['alias']})"
-                for i, cmd in enumerate(commands)
-            ])
-            
-            system_prompt = """你是一个专业的 AutoCAD 命令匹配助手。你的任务是根据用户的自然语言需求，从给定的命令列表中选择最匹配的命令。
-
-匹配原则：
-1. 优先选择功能完全匹配的命令
-2. 考虑用户的用词习惯和同义词
-3. 如果没有完全匹配的命令，选择功能最接近的命令
-
-返回格式：
-- 只返回最匹配命令的编号（1、2、3等）
-- 如果没有匹配的命令，返回 0
-- 不要返回任何其他内容或解释"""
-            
-            user_prompt = f"""用户需求: {requirement}
-
-可用命令列表:
-{commands_desc}
-
-请根据用户需求，从上述命令列表中选择最匹配的命令编号。"""
-            
-            response = requests.post(
-                f"{self.api_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": f"{system_prompt}\n\n{user_prompt}",
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.1,
-                        "num_predict": 20,
-                        "num_gpu": 50
-                    }
-                },
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                content = result.get('response', '').strip()
-                
-                if content == '0' or not content:
-                    return None
-                
-                try:
-                    idx = int(content.strip())
-                    if 1 <= idx <= len(commands):
-                        return commands[idx - 1]
-                except ValueError:
-                    pass
-            
-            return None
-        
-        except Exception as e:
-            print(f"[LLM匹配] 错误: {e}")
-            return None
-
 # 初始化命令嵌入管理器
 command_embeddings = CommandEmbeddings(EMBEDDINGS_CACHE_FILE)
-
-# 初始化 LLM 匹配器
-llm_matcher = LLMMatcher(OLLAMA_HOST, OLLAMA_MODEL)
 
 @app.route('/api/query', methods=['POST'])
 def query_requirement():
@@ -573,10 +483,7 @@ def get_stats():
         'total_codes': len(commands),
         'total_usage': 0,
         'total_commands': len(commands),
-        'llm_engine': 'Ollama',
-        'model': OLLAMA_MODEL,
         'embedding_model': EMBEDDING_MODEL,
-        'llm_available': llm_matcher.available,
         'rag_enabled': True,
         'file_watcher_enabled': True
     })
@@ -629,7 +536,7 @@ def save_user_code():
 
 @app.route('/api/user_codes/preview', methods=['POST'])
 def preview_user_code():
-    """预览用户代码信息（使用LLM生成命令名称和描述）"""
+    """预览用户代码信息（从代码中提取命令名称和描述）"""
     try:
         data = request.json
         code = data.get('code', '')
@@ -637,8 +544,7 @@ def preview_user_code():
         if not code:
             return jsonify({'success': False, 'message': '代码不能为空'}), 400
         
-        # 使用LLM生成命令名称和描述
-        result = _generate_code_info(code)
+        result = _extract_code_info(code)
         
         if result:
             return jsonify({
@@ -647,65 +553,31 @@ def preview_user_code():
                 'description': result['description']
             })
         else:
-            return jsonify({'success': False, 'message': '生成失败'}), 500
+            return jsonify({'success': False, 'message': '无法从代码中提取命令信息'}), 500
     except Exception as e:
-        return jsonify({'success': False, 'message': f'生成失败: {e}'}), 500
+        return jsonify({'success': False, 'message': f'提取失败: {e}'}), 500
 
-def _generate_code_info(code: str) -> Optional[Dict]:
-    """使用LLM生成代码的命令名称和描述"""
+def _extract_code_info(code: str) -> Optional[Dict]:
+    """从代码中提取命令名称和描述"""
     try:
-        prompt = f"""请分析以下AutoCAD LISP代码，提取命令名称和功能描述。
-
-要求：
-1. 从代码中提取defun函数定义的命令名称（通常是以c:开头的命令）
-2. 用50字以内描述代码的主要功能
-3. 返回JSON格式：{{"command": "命令名称", "description": "功能描述"}}
-
-代码内容：
-{code}
-
-请只返回JSON，不要其他内容。"""
+        import re
+        command_match = re.search(r'\(defun\s+c:(\w+)', code, re.IGNORECASE)
+        if not command_match:
+            command_match = re.search(r'\(defun\s+(\w+)', code, re.IGNORECASE)
         
-        response = requests.post(
-            f"{OLLAMA_HOST}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 200,
-                    "temperature": 0.3,
-                    "format": "json"
-                }
-            },
-            timeout=60
-        )
+        command_name = command_match.group(1) if command_match else ''
         
-        if response.status_code == 200:
-            result = response.json()
-            response_text = result.get('response', '').strip()
-            
-            # 解析JSON
-            import re
-            json_match = re.search(r'{{.*}}', response_text, re.DOTALL)
-            if json_match:
-                info = json.loads(json_match.group())
-                return {
-                    'command': info.get('command', '').strip(),
-                    'description': info.get('description', '').strip()[:50]
-                }
-            
-            # 尝试直接解析
-            info = json.loads(response_text)
-            return {
-                'command': info.get('command', '').strip(),
-                'description': info.get('description', '').strip()[:50]
-            }
-        else:
-            print(f"[LLM] 请求失败: {response.status_code}")
+        if not command_name:
             return None
+        
+        description = f"用户自定义命令: {command_name}"
+        
+        return {
+            'command': command_name,
+            'description': description
+        }
     except Exception as e:
-        print(f"[LLM] 生成失败: {e}")
+        print(f"[提取] 错误: {e}")
         return None
 
 @app.route('/api/user_codes/list', methods=['GET'])
@@ -860,9 +732,6 @@ def health_check():
     """健康检查"""
     return jsonify({
         'status': 'ok',
-        'llm_available': llm_matcher.available,
-        'llm_engine': 'Ollama',
-        'model': OLLAMA_MODEL,
         'embedding_model': EMBEDDING_MODEL,
         'rag_enabled': True,
         'file_watcher_enabled': True
@@ -889,7 +758,6 @@ if __name__ == '__main__':
     print("CADChat 本地服务端 - RAG 版本（自动文件监控）")
     print("=" * 60)
     print(f"Ollama 主机: {OLLAMA_HOST}")
-    print(f"Ollama 模型: {OLLAMA_MODEL}")
     print(f"嵌入模型: {EMBEDDING_MODEL}")
     print(f"基本命令库: {BASIC_COMMANDS_FILE}")
     print(f"LISP命令库: {LISP_COMMANDS_FILE}")
@@ -909,14 +777,6 @@ if __name__ == '__main__':
             f.write("# 用户代码索引\n")
             f.write("# 格式: 代码ID|命令名称|描述|文件名|创建时间\n")
         print(f"[初始化] 创建用户代码索引文件: {USER_CODES_FILE}")
-    
-    # 检查 LLM 可用性
-    print("检查 LLM 可用性...")
-    if llm_matcher.check_available():
-        print("✓ LLM 可用")
-    else:
-        print("✗ LLM 不可用")
-    print("")
     
     # 检查嵌入模型
     print("检查嵌入模型...")

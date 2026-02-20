@@ -1,0 +1,6 @@
+# CADCHAT 客户端依赖
+# 用于图形界面客户端
+
+tkinter>=8.6
+requests>=2.31.0
+python-dotenv>=1.0.0

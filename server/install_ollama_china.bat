@@ -94,9 +94,9 @@ echo Download Model
 echo ========================================
 echo.
 
-REM Download model using full path
-echo [Step 1/2] Downloading Qwen3-1.7B model...
-"%OLLAMA_DIR%\ollama.exe" pull qwen3:1.7b
+REM Download embedding model
+echo [Step 1/2] Downloading bge-m3 embedding model...
+"%OLLAMA_DIR%\ollama.exe" pull bge-m3
 
 if %errorlevel% neq 0 (
     echo [ERROR] Model download failed
@@ -120,7 +120,7 @@ echo ========================================
 echo.
 echo Installed:
 echo   - Ollama: %OLLAMA_DIR%
-echo   - Model: qwen3:1.7b
+echo   - Embedding Model: bge-m3
 echo.
 echo Next steps:
 echo   1. Reopen command prompt to make PATH effective

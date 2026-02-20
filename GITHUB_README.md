@@ -67,18 +67,55 @@ CADCHAT/
 ├── cloud_client.py            # 客户端通信模块
 ├── kimi_browser.py           # Kimi 浏览器自动化
 ├── cad_connector.py          # CAD 连接模块
+├── client_config.py          # 客户端配置管理器
 ├── start_client.bat          # 客户端启动脚本
+├── start_client_updated.bat  # 更新版客户端启动脚本
+├── .env.example              # 客户端环境配置示例
 ├── README.md                 # 项目说明
 ├── CLIENT_USER_MANUAL.md      # 客户端手册
-└── server/
-    ├── cloud_server_rag.py   # 服务端主程序
-    ├── start_server_rag.bat  # 服务端启动脚本
-    ├── stop_server.bat       # 服务端停止脚本
-    ├── requirements.txt      # Python 依赖
-    ├── autocad_basic_commands.txt  # 基本命令库
-    ├── lisp_commands.txt     # LISP 命令库
-    └── user_codes/           # 用户代码目录
+├── client_config_guide.md     # 客户端配置指南
+├── deployment_comparison_guide.md # 部署方式对比指南
+├── deployment_configuration_guide.md # 部署配置指南
+├── deployment_summary.md         # 部署方式总结
+├── server/                   # 局域网服务端目录
+│   ├── SERVER_USER_MANUAL.md # 局域网服务端手册
+│   ├── cloud_server_rag.py   # 基于本地RAG的服务端
+│   ├── start_server_rag.bat  # 启动本地RAG服务端脚本
+│   ├── stop_server.bat       # 停止服务端脚本
+│   ├── requirements.txt      # Python 依赖
+│   ├── autocad_basic_commands.txt  # 基本命令库
+│   ├── lisp_commands.txt     # LISP 命令库
+│   └── user_codes/           # 用户代码目录
+└── aliserver/                # 阿里云服务端目录
+    ├── aliyun_bailian_adapter.py # 阿里云百炼平台适配器
+    ├── cloud_server_bailian.py   # 基于百炼平台的服务端
+    ├── start_server_bailian.bat  # 启动百炼平台服务端脚本
+    ├── Dockerfile           # Docker构建文件（阿里云部署专用）
+    ├── docker-compose.yml   # Docker Compose配置（阿里云部署专用）
+    ├── requirements.txt     # Python 依赖
+    ├── user_codes/         # 用户代码目录
+    ├── autocad_basic_commands.txt # AutoCAD基础命令库
+    ├── lisp_commands.txt   # LISP命令库
+    └── .env.example       # 阿里云服务端环境配置示例
 ```
+
+## 部署方式
+
+本项目支持两种部署方式，可根据需求选择：
+
+### 1. 局域网部署 (server/)
+
+适用于内网环境或对数据安全要求较高的场景：
+- 使用本地Ollama + bge-m3模型
+- 所有数据本地处理
+- 需要GPU支持
+
+### 2. 阿里云部署 (aliserver/)
+
+适用于云端部署或无高性能硬件的场景：
+- 使用阿里云百炼平台
+- 无需本地大模型
+- 基于API调用
 
 ## 使用说明
 
