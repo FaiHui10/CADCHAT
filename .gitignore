@@ -36,12 +36,36 @@ ENV/
 *.npy
 *.db
 temp/
-__pycache__/
 *.log
 
-# Ollama 模型（不提交到 GitHub）
-ollama/
-models/
+# Environment specific files (do not commit actual .env files)
+**/.env
+!**/.env.example
+
+# Server specific ignores
+server/__pycache__/
+server/*.npy
+server/*.db
+server/temp/
+server/models/
+
+# AliServer specific ignores
+aliserver/__pycache__/
+aliserver/*.npy
+aliserver/*.db
+aliserver/temp/
+aliserver/models/
+
+# User codes (keep the directory structure but ignore actual user code content)
+server/user_codes/*
+!server/user_codes/user_codes.txt
+!server/user_codes/*.lsp
+aliserver/user_codes/*
+!aliserver/user_codes/user_codes.txt
+!aliserver/user_codes/*.lsp
+
+# Ollama (for local installations)
+**/ollama/
 
 # Windows
 Thumbs.db

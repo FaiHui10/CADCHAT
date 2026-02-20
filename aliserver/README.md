@@ -1,6 +1,6 @@
 # CADCHAT 阿里云服务端 (Aliserver)
 
-这是CADCHAT项目的阿里云部署版本，使用阿里云百炼平台进行RAG检索。
+这是CADCHAT项目的阿里云部署版本，使用阿里云百炼平台的text-embedding-v4模型进行RAG检索。
 
 ## 文件结构
 
@@ -17,7 +17,11 @@ aliserver/
 │   └── *.lsp                   # 用户LISP代码文件
 ├── autocad_basic_commands.txt   # AutoCAD基础命令库
 ├── lisp_commands.txt           # LISP命令库
-└── .env.example               # 环境变量配置示例
+├── .env.example               # 环境变量配置示例
+├── bailian_ecs_deployment_guide.md # 百炼平台ECS部署指南
+├── deploy_to_aliyun_guide.md      # 部署到阿里云指南
+├── ecs_2c2g_optimization_guide.md # ECS 2核2G优化指南
+└── README.md                  # 项目说明文档
 ```
 
 ## 部署方式
@@ -71,6 +75,10 @@ aliserver/
    docker-compose up -d
    ```
 
+### 方式四：阿里云ECS部署
+
+将服务部署到阿里云ECS实例，适用于生产环境。详细步骤请参见 `bailian_ecs_deployment_guide.md` 文档。
+
 ## 环境变量配置
 
 在 `.env` 文件中配置以下参数：
@@ -93,15 +101,20 @@ FLASK_PORT=5000
 - `GET /api/user_codes/list` - 获取用户代码列表
 - `GET /api/user_codes/get/<code_id>` - 获取用户代码内容
 - `DELETE /api/user_codes/delete/<code_id>` - 删除用户代码
+- `POST /api/rebuild_embeddings` - 重建向量索引
+- `GET/POST /api/codes` - 代码管理
+- `GET /api/codes/<int:code_id>` - 获取特定代码
+- `POST /api/user_codes/preview` - 预览用户代码
 
 ## 配置说明
 
-此版本使用阿里云百炼平台替代本地Ollama+bge-m3方案，具有以下特点：
+此版本使用阿里云百炼平台的text-embedding-v4模型替代本地Ollama+bge-m3方案，具有以下特点：
 
 - 无需本地大模型部署
 - 云端计算资源，无需高性能硬件
 - 稳定的API服务
 - 支持高并发访问
+- 基于向量相似性的精准匹配
 
 ## 注意事项
 

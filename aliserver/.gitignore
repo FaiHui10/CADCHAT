@@ -1,0 +1,44 @@
+# AliServer specific ignores for cloud deployment
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# Model files (should not exist in cloud version)
+models/
+ollama/
+
+# Vector embeddings (should not exist in cloud version)
+*.npy
+embeddings/
+
+# Docker related (keep Dockerfile and docker-compose.yml but ignore build artifacts)
+*.tar
+*.tar.gz
+*.zip
+
+# User uploaded files
+uploads/
+
+# Environment files (actual env files, but keep the example)
+.env
+!/.env.example
+
+# Local development files
+local_settings.py
+config.local

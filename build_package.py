@@ -113,7 +113,7 @@ def create_package():
     # 根目录文件
     root_files = [
         'README.md',
-        'CLIENT_USER_MANUAL.md',
+        'CLIENT_GUIDE.md',
         'start_client.bat',
     ]
 

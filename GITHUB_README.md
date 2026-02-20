@@ -72,11 +72,8 @@ CADCHAT/
 ├── start_client_updated.bat  # 更新版客户端启动脚本
 ├── .env.example              # 客户端环境配置示例
 ├── README.md                 # 项目说明
-├── CLIENT_USER_MANUAL.md      # 客户端手册
-├── client_config_guide.md     # 客户端配置指南
-├── deployment_comparison_guide.md # 部署方式对比指南
-├── deployment_configuration_guide.md # 部署配置指南
-├── deployment_summary.md         # 部署方式总结
+├── CLIENT_GUIDE.md           # 客户端综合指南
+├── DEPLOYMENT_GUIDE.md           # 部署指南（综合）
 ├── server/                   # 局域网服务端目录
 │   ├── SERVER_USER_MANUAL.md # 局域网服务端手册
 │   ├── cloud_server_rag.py   # 基于本地RAG的服务端

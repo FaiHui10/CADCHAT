@@ -6,7 +6,7 @@
 
 改造后的CADCHAT服务端主要由以下组件构成：
 - Flask Web 应用：提供 RESTful API 接口
-- 阿里云百炼平台：AI模型和RAG检索服务
+- 阿里云百炼平台：AI模型和RAG检索服务（使用text-embedding-v4模型）
 - 文件监控系统：自动监控命令库变化并重新加载
 
 ## 2. 部署前准备

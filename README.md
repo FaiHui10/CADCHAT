@@ -161,13 +161,10 @@ python main_gui_cloud.py
 
 ```
 CADCHAT/
-├── CLIENT_USER_MANUAL.md          # 客户端用户手册
+├── CLIENT_GUIDE.md               # 客户端综合指南
 ├── README.md                     # 项目说明（本文件）
 ├── cad_connector.py               # CAD 连接器
-├── deployment_comparison_guide.md # 部署方式对比指南
-├── deployment_configuration_guide.md # 部署配置指南
-├── deployment_decision_guide.md   # 部署决策指南
-├── deployment_summary.md         # 部署方式总结
+├── DEPLOYMENT_GUIDE.md           # 部署指南（综合）
 ├── cloud_client.py               # 云客户端
 ├── kimi_browser.py               # Kimi 浏览器
 ├── main_gui_cloud.py             # 主 GUI 客户端主程序
@@ -177,7 +174,9 @@ CADCHAT/
 ├── start_client_updated.bat      # 更新版启动客户端脚本
 ├── .env.example                  # 客户端环境配置示例
 ├── server/                       # 局域网服务端目录
+│   ├── README.md                # 局域网服务端说明文档
 │   ├── SERVER_USER_MANUAL.md     # 服务端用户手册
+│   ├── LOCAL_DEPLOYMENT_GUIDE.md # 局域网部署指南
 │   ├── autocad_basic_commands.txt # 基本命令库
 │   ├── lisp_commands.txt         # LISP 命令库
 │   ├── cloud_server_rag.py      # 基于本地RAG的Flask服务器
@@ -185,9 +184,11 @@ CADCHAT/
 │   ├── start_server_rag.bat      # 启动本地RAG服务器脚本
 │   ├── stop_server.bat           # 停止服务器脚本
 │   ├── install_bge_m3.bat        # 安装嵌入模型脚本
+│   ├── install_ollama_china.bat  # 安装Ollama脚本
 │   └── user_codes/              # 用户代码目录
 └── aliserver/                    # 阿里云服务端目录
-    ├── aliyun_bailian_adapter.py # 阿里云百炼平台适配器
+    ├── README.md                # 阿里云服务端说明文档
+    ├── aliyun_bailian_adapter.py # 阿里云百炼平台适配器（使用text-embedding-v4）
     ├── cloud_server_bailian.py   # 基于百炼平台的Flask服务器
     ├── start_server_bailian.bat  # 启动百炼平台服务器脚本
     ├── Dockerfile               # Docker构建文件（阿里云部署专用）
@@ -196,7 +197,10 @@ CADCHAT/
     ├── user_codes/             # 用户代码目录
     ├── autocad_basic_commands.txt # AutoCAD基础命令库
     ├── lisp_commands.txt       # LISP命令库
-    └── .env.example           # 阿里云服务端环境配置示例
+    ├── .env.example           # 阿里云服务端环境配置示例
+    ├── bailian_ecs_deployment_guide.md # 百炼平台ECS部署指南
+    ├── deploy_to_aliyun_guide.md      # 部署到阿里云指南
+    └── ecs_2c2g_optimization_guide.md # ECS 2核2G优化指南
 ```
 
 ## 使用指南
@@ -238,7 +242,7 @@ stop_server.bat
 
 ### 用户手册
 
-- **[客户端用户手册](CLIENT_USER_MANUAL.md)**：客户端使用指南
+- **[客户端综合指南](CLIENT_GUIDE.md)**：客户端使用指南
 - **[局域网服务端手册](server/SERVER_USER_MANUAL.md)**：局域网服务端使用指南
 - **[阿里云服务端手册](aliserver/SERVER_USER_MANUAL.md)**：阿里云服务端使用指南
 
@@ -349,7 +353,7 @@ stop_server.bat
 ## 技术支持
 
 如有问题，请查看：
-- [客户端用户手册](CLIENT_USER_MANUAL.md)
+- [客户端综合指南](CLIENT_GUIDE.md)
 - [局域网服务端手册](server/SERVER_USER_MANUAL.md)
 - [阿里云服务端手册](aliserver/SERVER_USER_MANUAL.md)
 

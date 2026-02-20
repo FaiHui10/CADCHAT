@@ -16,7 +16,7 @@
 
 ## 简介
 
-CADCHAT 阿里云服务端是一个基于阿里云百炼平台的云端服务器，提供 CAD 命令匹配和 LISP 代码生成服务。服务端使用阿里云百炼平台进行向量检索和大模型推理，支持 RAG（检索增强生成）技术。
+CADCHAT 阿里云服务端是一个基于阿里云百炼平台的云端服务器，提供 CAD 命令匹配和 LISP 代码生成服务。服务端使用阿里云百炼平台的text-embedding-v4模型进行向量检索，支持 RAG（检索增强生成）技术。
 
 ### 主要功能
 
@@ -136,9 +136,9 @@ docker-compose up -d
 
 ### 1. RAG检索功能
 
-- **向量检索**：使用阿里云百炼平台进行语义检索
-- **智能匹配**：基于上下文理解的智能命令匹配
-- **多模态支持**：支持多种类型的查询
+- **向量检索**：使用阿里云百炼平台的text-embedding-v4模型进行语义检索
+- **智能匹配**：基于向量相似度的智能命令匹配
+- **高效检索**：通过余弦相似度计算实现快速匹配
 
 ### 2. 命令库管理
 
@@ -202,38 +202,149 @@ docker-compose up -d
 
 ## 部署方式
 
-### 1. 直接运行
+本服务端支持多种部署方式：
 
-**优点**：
-- 部署简单
-- 适合开发测试
-- 资源占用少
+### 方式一：直接运行
 
-**缺点**：
-- 需要手动管理进程
-- 依赖系统Python环境
+1. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 2. Docker部署
+2. **配置环境变量**
+   ```bash
+   copy .env.example .env
+   # 编辑 .env 文件，填入阿里云百炼平台的APP ID和API密钥
+   ```
 
-**优点**：
-- 环境隔离
-- 依赖管理简单
-- 便于部署到服务器
+3. **启动服务**
+   ```bash
+   # Windows
+   start_server_bailian.bat
+   
+   # 或直接运行
+   python cloud_server_bailian.py
+   ```
 
-**缺点**：
-- 需要Docker环境
-- 占用额外资源
+### 方式二：Docker部署
 
-### 3. Docker Compose部署
+1. **构建Docker镜像**
+   ```bash
+   docker build -t cadchat-aliyun-server .
+   ```
 
-**优点**：
-- 配置管理方便
-- 支持服务编排
-- 便于管理多个服务
+2. **运行Docker容器**
+   ```bash
+   docker run -d -p 5000:5000 --env-file .env cadchat-aliyun-server
+   ```
 
-**缺点**：
-- 需要Docker Compose
-- 配置相对复杂
+### 方式三：Docker Compose部署
+
+1. **确保已配置环境变量**
+   ```bash
+   copy .env.example .env
+   # 编辑 .env 文件，填入阿里云百炼平台的APP ID和API密钥
+   ```
+
+2. **使用Docker Compose启动**
+   ```bash
+   docker-compose up -d
+   ```
+
+### 方式四：阿里云ECS部署
+
+将服务部署到阿里云ECS实例，适用于生产环境。
+
+#### 4.1 ECS实例准备
+
+1. **创建ECS实例**
+   - **实例规格**：推荐ecs.c6.large（2核4GB），最低配置ecs.c6.small（2核2GB）
+   - **操作系统**：Ubuntu 20.04 LTS
+   - **系统盘**：40GB SSD云盘
+   - **网络**：VPC网络
+
+2. **配置安全组规则**
+   - **HTTP访问**：端口 80 (TCP)
+   - **HTTPS访问**：端口 443 (TCP)
+   - **服务端口**：端口 5000 (TCP) - 用于CADCHAT服务
+
+#### 4.2 ECS环境配置
+
+1. **连接到ECS实例**
+   ```bash
+   ssh username@your-ecs-public-ip
+   ```
+
+2. **安装必要软件**
+   ```bash
+   # 更新系统
+   sudo apt update && sudo apt upgrade -y
+   
+   # 安装Git
+   sudo apt install git -y
+   
+   # 安装Python 3.8+
+   sudo apt install python3 python3-pip -y
+   
+   # 安装Docker（可选）
+   sudo apt install docker.io -y
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   sudo usermod -aG docker $USER
+   ```
+
+#### 4.3 部署服务
+
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/your-repo/CADCHAT.git
+   cd CADCHAT/aliserver
+   ```
+
+2. **配置环境变量**
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件，填入阿里云百炼平台的APP ID和API密钥
+   vim .env
+   ```
+
+3. **安装依赖并启动服务**
+   ```bash
+   pip3 install -r requirements.txt
+   nohup python3 cloud_server_bailian.py > server.log 2>&1 &
+   ```
+
+   或使用Docker部署：
+   ```bash
+   docker-compose up -d
+   ```
+
+#### 4.4 ECS优化建议（2核2GB配置）
+
+对于2核2GB的ECS实例，建议进行以下优化：
+- 添加swap空间以增加虚拟内存
+- 配置系统监控和日志轮转
+- 设置防火墙规则以增强安全性
+- 定期备份重要数据
+
+#### 4.5 验证部署
+
+1. **检查服务状态**
+   ```bash
+   curl http://localhost:5000/api/health
+   ```
+
+2. **查看日志**
+   ```bash
+   tail -f server.log
+   ```
+
+3. **测试API**
+   ```bash
+   curl -X POST http://localhost:5000/api/query \
+     -H "Content-Type: application/json" \
+     -d '{"requirement":"画一个圆"}'
+   ```
 
 ---
 

@@ -2,15 +2,15 @@
 阿里云百炼平台RAG适配器
 用于替换原有的Ollama+bge-m3向量检索实现
 
-注意：百炼平台的RAG功能在云端，本适配器只是将本地命令库内容
-发送给百炼平台进行查询，而非直接操作百炼平台的向量库。
+注意：现在使用text-embedding-v4模型进行向量检索
 """
 
 import os
 import json
+import numpy as np
 from typing import Dict, List, Optional
-from http import HTTPStatus
-from dashscope import Application
+from dashscope import TextEmbedding
+from sklearn.metrics.pairwise import cosine_similarity
 import threading
 import time
 from watchdog.observers import Observer
@@ -18,14 +18,14 @@ from watchdog.events import FileSystemEventHandler
 
 
 class BailianRAGAdapter:
-    """阿里云百炼平台RAG适配器"""
+    """阿里云百炼平台RAG适配器 - 使用text-embedding-v4"""
     
     def __init__(self, app_id: str, api_key: str = None):
         """
         初始化百炼适配器
         
         Args:
-            app_id: 百炼应用ID
+            app_id: 百炼应用ID（保留用于未来可能的扩展）
             api_key: 百炼API密钥，如果不提供则从环境变量获取
         """
         self.app_id = app_id
@@ -34,8 +34,12 @@ class BailianRAGAdapter:
         if not self.api_key:
             raise ValueError("API Key未提供，请设置DASHSCOPE_API_KEY环境变量或在初始化时提供")
         
-        # 加载命令库文件（这些是我们本地的命令库）
+        # 设置API密钥
+        os.environ['DASHSCOPE_API_KEY'] = self.api_key
+        
+        # 加载命令库文件
         self.commands = self._load_commands()
+        self.command_embeddings = self._generate_embeddings()
         
     def _load_commands(self) -> List[Dict]:
         """加载命令库（基本命令 + LISP 命令 + 用户代码）"""
@@ -79,7 +83,6 @@ class BailianRAGAdapter:
                                 })
             
             # 加载用户代码（仅加载描述信息用于RAG查询，不加载具体代码内容）
-            # 这样百炼平台可以基于用户自定义命令的描述进行匹配
             if os.path.exists(USER_CODES_FILE):
                 with open(USER_CODES_FILE, 'r', encoding='utf-8') as f:
                     for line in f:
@@ -106,11 +109,48 @@ class BailianRAGAdapter:
         
         return commands
     
+    def _generate_embeddings(self):
+        """生成命令库的向量嵌入"""
+        if not self.commands:
+            return np.array([])
+        
+        texts = [cmd['text'] for cmd in self.commands]
+        embeddings = []
+        
+        print(f"[百炼适配器] 开始生成 {len(texts)} 个命令的向量嵌入...")
+        
+        # 分批处理，避免超过API限制
+        batch_size = 50
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i:i+batch_size]
+            try:
+                response = TextEmbedding.call(
+                    model='text-embedding-v4',
+                    input=batch_texts
+                )
+                
+                if response.status_code == 200:
+                    batch_embeddings = [item.embedding for item in response.output.embeddings]
+                    embeddings.extend(batch_embeddings)
+                    print(f"[百炼适配器] 已处理 {min(i+batch_size, len(texts))}/{len(texts)} 个文本")
+                else:
+                    print(f"[百炼适配器] 批次 {i//batch_size+1} 生成嵌入失败: {response.code}, {response.message}")
+                    # 如果失败，用零向量填充
+                    for _ in range(len(batch_texts)):
+                        embeddings.append([0.0] * 1536)  # text-embedding-v4通常输出1536维向量
+                        
+            except Exception as e:
+                print(f"[百炼适配器] 批次 {i//batch_size+1} 生成嵌入异常: {e}")
+                # 如果异常，用零向量填充
+                for _ in range(len(batch_texts)):
+                    embeddings.append([0.0] * 1536)
+        
+        print(f"[百炼适配器] 向量嵌入生成完成")
+        return np.array(embeddings)
+    
     def search(self, requirement: str, top_k: int = 3) -> List[Dict]:
         """
-        使用百炼平台进行RAG检索
-        注意：这里我们是将本地命令库内容发送给百炼平台进行查询，
-        而不是直接操作百炼平台的向量库。
+        使用text-embedding-v4进行RAG检索
         
         Args:
             requirement: 用户需求描述
@@ -119,65 +159,35 @@ class BailianRAGAdapter:
         Returns:
             匹配的命令列表
         """
-        # 构建查询提示词，将本地命令库作为上下文发送给百炼平台
-        prompt = f"""
-        你是一个CAD命令助手。根据用户的CAD功能需求，从提供的CAD命令库中找出最匹配的命令。
-        
-        用户需求: {requirement}
-        
-        CAD命令库（请在此范围内查找匹配项）:
-        {json.dumps(self.commands, ensure_ascii=False, indent=2)}
-        
-        请严格按照以下JSON格式返回最匹配的{top_k}个命令:
-        {{
-            "results": [
-                {{
-                    "command": "命令名称",
-                    "description": "命令描述", 
-                    "alias": "别名",
-                    "type": "basic|lisp|user_code",
-                    "similarity": 0.99
-                }}
-            ]
-        }}
-        
-        注意：只返回JSON格式的结果，不要添加其他解释。
-        """
-        
         try:
-            response = Application.call(
-                app_id=self.app_id,
-                prompt=prompt,
-                api_key=self.api_key
+            # 生成用户需求的向量嵌入
+            response = TextEmbedding.call(
+                model='text-embedding-v4',
+                input=[requirement]
             )
             
-            if response.status_code != HTTPStatus.OK:
-                print(f'[百炼适配器] API调用失败: {response.status_code}, {response.message}')
+            if response.status_code != 200:
+                print(f'[百炼适配器] 生成查询向量失败: {response.code}, {response.message}')
                 return []
             
-            # 解析返回结果
-            output_text = response.output.text
+            query_embedding = np.array(response.output.embeddings[0]).reshape(1, -1)
             
-            # 提取JSON部分（以防返回中有其他内容）
-            import re
-            json_match = re.search(r'\{.*\}', output_text, re.DOTALL)
-            if json_match:
-                json_str = json_match.group()
-                result = json.loads(json_str)
-                
-                if 'results' in result:
-                    # 确保返回结果不超过top_k个
-                    return result['results'][:top_k]
-                else:
-                    print(f'[百炼适配器] 返回格式错误: 缺少results字段')
-                    return []
-            else:
-                print(f'[百炼适配器] 未能解析JSON响应: {output_text}')
-                return []
-                
-        except json.JSONDecodeError as e:
-            print(f'[百炼适配器] JSON解析错误: {e}, 响应: {output_text}')
-            return []
+            # 计算余弦相似度
+            similarities = cosine_similarity(query_embedding, self.command_embeddings)[0]
+            
+            # 获取最相似的top_k个命令
+            top_indices = np.argsort(similarities)[::-1][:top_k]
+            
+            results = []
+            for idx in top_indices:
+                similarity = float(similarities[idx])
+                command = self.commands[idx].copy()
+                command['similarity'] = similarity
+                results.append(command)
+            
+            print(f"[百炼适配器] 检索完成，找到 {len(results)} 个匹配命令")
+            return results
+            
         except Exception as e:
             print(f'[百炼适配器] 检索过程出错: {e}')
             return []
@@ -193,7 +203,7 @@ class BailianCommandsFileHandler(FileSystemEventHandler):
     def __init__(self, adapter_instance):
         self.adapter = adapter_instance
         self.last_modified = 0
-        self.debounce_time = 2  # 防抖时间（秒）
+        self.debounce_time = 5  # 增加防抖时间，因为重新生成嵌入需要时间
     
     def on_modified(self, event):
         """文件修改事件"""
@@ -215,21 +225,25 @@ class BailianCommandsFileHandler(FileSystemEventHandler):
         self.last_modified = current_time
         
         print(f"[文件监控] 检测到命令库文件变化: {event.src_path}")
-        print(f"[文件监控] 重新加载命令库...")
+        print(f"[文件监控] 准备重新加载命令库和向量嵌入...")
 
-        # 在后台线程中重新加载命令
+        # 在后台线程中重新加载命令和嵌入
         import threading
-        threading.Thread(target=self._reload_commands, daemon=True).start()
+        threading.Thread(target=self._reload_commands_and_embeddings, daemon=True).start()
 
-    def _reload_commands(self):
-        """重新加载命令库"""
-        # 注意：这只是更新本地内存中的命令库
-        # 百炼平台的RAG知识库需要单独管理
+    def _reload_commands_and_embeddings(self):
+        """重新加载命令库和向量嵌入"""
         old_count = len(self.adapter.commands)
+        print(f"[文件监控] 开始重新加载命令库和向量嵌入...")
+        
+        # 重新加载命令库
         self.adapter.commands = self.adapter._load_commands()
+        # 重新生成向量嵌入
+        self.adapter.command_embeddings = self.adapter._generate_embeddings()
+        
         new_count = len(self.adapter.commands)
         
-        print(f"[文件监控] 命令库已更新: {old_count} -> {new_count} 个命令")
+        print(f"[文件监控] 命令库和向量嵌入已更新: {old_count} -> {new_count} 个命令")
 
 
 class BailianCommandEmbeddings:
@@ -281,16 +295,17 @@ class BailianCommandEmbeddings:
             print(f"[文件监控] 已启动，监控目录: {watch_dir}, {user_codes_dir}")
             print(f"[文件监控] 监控文件: autocad_basic_commands.txt, lisp_commands.txt, user_codes/user_codes.txt")
             print(f"[文件监控] 注意：在Docker环境中，可能需要重启容器以确保文件变化被完全检测到")
-            print(f"[文件监控] 注意：此监控仅更新本地命令库缓存，不直接影响百炼平台的RAG知识库")
+            print(f"[文件监控] 注意：此监控会在文件变化时重新生成向量嵌入")
         except Exception as e:
             print(f"[文件监控] 启动失败: {e}")
             print(f"[文件监控] 错误详情: {str(e)}")
     
     def rebuild_index(self):
-        """重建索引（重新加载命令库）"""
+        """重建索引（重新加载命令库和向量嵌入）"""
         print("[索引] 开始重建索引...")
         old_count = len(self.adapter.commands)
         self.adapter.commands = self.adapter._load_commands()
+        self.adapter.command_embeddings = self.adapter._generate_embeddings()
         new_count = len(self.adapter.commands)
         print(f"[索引] 索引重建完成: {old_count} -> {new_count} 个命令")
         return new_count

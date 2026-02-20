@@ -1,0 +1,35 @@
+# Server specific ignores for local deployment
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# Model files (for local Ollama installation)
+models/
+ollama/
+
+# Vector embeddings
+*.npy
+embeddings/
+
+# User uploaded files
+uploads/
+
+# Environment files (actual env files, but keep the example)
+.env
+!/.env.example
