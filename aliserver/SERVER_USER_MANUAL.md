@@ -85,12 +85,18 @@ cd CADCHAT/aliserver
    cp .env.example .env
    ```
 
-3. **编辑环境变量**
+3.2. **配置环境变量**
    ```bash
    # 编辑 .env 文件
    BAILIAN_APP_ID=your-bailian-app-id
    DASHSCOPE_API_KEY=your-dashscope-api-key
    ```
+   
+   主要配置项：
+   - `BAILIAN_APP_ID`: 阿里云百炼平台应用ID
+   - `DASHSCOPE_API_KEY`: 阿里云API密钥
+   - `FLASK_HOST`: Flask服务监听地址（默认：0.0.0.0）
+   - `FLASK_PORT`: Flask服务监听端口（默认：5000）
 
 ---
 

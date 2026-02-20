@@ -70,9 +70,25 @@ cd server
 python cloud_server_rag.py
 ```
 
-## 5. 配置说明
+## 6. 配置说明
 
-局域网服务端无需特殊环境变量配置，使用默认设置即可运行。
+局域网服务端支持环境变量配置，可在 .env 文件中进行自定义设置。
+
+### 6.1 环境变量配置
+
+复制配置模板：
+
+```bash
+copy .env.example .env
+```
+
+主要配置项：
+- `OLLAMA_HOST`: Ollama服务地址（默认：http://localhost:11434）
+- `EMBEDDING_MODEL`: 嵌入模型名称（默认：bge-m3）
+- `FLASK_HOST`: Flask服务监听地址（默认：0.0.0.0）
+- `FLASK_PORT`: Flask服务监听端口（默认：5000）
+- `USER_CODES_FILE`: 用户代码文件路径
+- `COMMAND_FILES_DIR`: 命令文件目录
 
 ## 6. 重要说明
 

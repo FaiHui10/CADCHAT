@@ -129,6 +129,24 @@ docker-compose up -d
    CADCHAT_SERVER_URL=http://your-ecs-ip:5000  # ECS部署后
    ```
 
+   根据部署方式，服务端也可能需要环境变量配置：
+   
+   **局域网部署 (server/)**：
+   ```env
+   OLLAMA_HOST=http://localhost:11434
+   EMBEDDING_MODEL=bge-m3
+   FLASK_HOST=0.0.0.0
+   FLASK_PORT=5000
+   ```
+   
+   **阿里云部署 (aliserver/)**：
+   ```env
+   BAILIAN_APP_ID=your-bailian-app-id
+   DASHSCOPE_API_KEY=your-dashscope-api-key
+   FLASK_HOST=0.0.0.0
+   FLASK_PORT=5000
+   ```
+
 ### 步骤 5：启动客户端
 
 ```powershell
