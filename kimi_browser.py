@@ -24,7 +24,14 @@ class KimiBrowser:
         self.playwright = None
         # 用户数据目录，用于保存登录状态
         self.user_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "browser_data")
+        # 登录回调函数
+        self.login_callback = None
+        self._login_required = False
         
+    def set_login_callback(self, callback):
+        """设置登录回调函数"""
+        self.login_callback = callback
+    
     def start(self) -> bool:
         """启动浏览器"""
         try:
@@ -84,8 +91,9 @@ class KimiBrowser:
             # 检查是否需要登录
             if self._check_login_required():
                 print("⚠ 需要登录Kimi账号")
-                print("请在浏览器中完成登录，然后按回车继续...")
-                input()
+                self._login_required = True
+                if self.login_callback:
+                    self.login_callback()
             
             print("✓ 已打开Kimi网站")
             return True

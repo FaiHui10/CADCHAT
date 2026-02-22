@@ -10,23 +10,44 @@ from typing import Dict, List, Optional
 from datetime import datetime
 import sqlite3
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from client_config import get_config
 
 class CloudClient:
     """云端客户端（云服务版本）"""
     
-    def __init__(self, server_url: str = None):
+    def __init__(self, server_url: str = None, env_file: str = '.env'):
         # 使用配置管理器获取服务端URL
         if server_url is None:
-            config = get_config()
+            config = get_config(env_file=env_file)
             server_url = config.server_url
         self.server_url = server_url.rstrip('/')
         
         # 使用配置管理器获取缓存配置
-        config = get_config()
+        config = get_config(env_file=env_file)
         self.cache_db = config.cache_db_path
         self.timeout = config.request_timeout
         self.init_cache()
+    
+    def get_ollama_models(self) -> List[str]:
+        """获取可用的 Ollama 模型列表"""
+        try:
+            response = requests.get(
+                f'{self.server_url}/api/models',
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                return response.json().get('models', [])
+            else:
+                print(f"[错误] 获取模型列表失败: {response.status_code}")
+                return []
+        
+        except requests.exceptions.RequestException as e:
+            print(f"[错误] 网络请求失败: {e}")
+            return []
     
     def init_cache(self):
         """初始化本地缓存"""

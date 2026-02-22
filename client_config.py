@@ -19,9 +19,12 @@ class ClientConfig:
         Args:
             env_file: 环境变量文件路径
         """
-        # 加载环境变量文件
-        self.env_file = env_file
-        load_dotenv(dotenv_path=env_file, override=True)
+        # 加载环境变量文件 - 使用绝对路径
+        import os
+        from pathlib import Path
+        env_path = Path(__file__).parent / env_file
+        self.env_file = str(env_path)
+        load_dotenv(dotenv_path=self.env_file, override=True)
         
         # 服务端配置
         self.server_url = os.getenv('CADCHAT_SERVER_URL', 'http://localhost:5000')
@@ -93,10 +96,10 @@ class ClientConfig:
         print(f"[配置] 配置已保存到 {self.env_file}")
 
 
-# 全局配置实例
-config = ClientConfig()
-
-
-def get_config() -> ClientConfig:
-    """获取全局配置实例"""
-    return config
+def get_config(env_file: str = '.env') -> ClientConfig:
+    """获取配置实例（每次都重新加载）
+    
+    Args:
+        env_file: 环境配置文件，默认为'.env'
+    """
+    return ClientConfig(env_file=env_file)

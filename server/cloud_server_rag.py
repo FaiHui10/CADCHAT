@@ -396,6 +396,34 @@ class CommandEmbeddings:
 # 初始化命令嵌入管理器
 command_embeddings = CommandEmbeddings(EMBEDDINGS_CACHE_FILE)
 
+@app.route('/api/search', methods=['POST'])
+def search_commands():
+    """搜索命令（兼容 aliserver API）"""
+    data = request.json
+    query = data.get('query', '')
+    top_k = data.get('top_k', 5)
+    
+    if not query:
+        return jsonify({'error': '查询不能为空'}), 400
+    
+    print(f"[搜索] 查询: {query}")
+    
+    results = command_embeddings.search(query, top_k=top_k)
+    
+    return jsonify({
+        'query': query,
+        'results': [
+            {
+                'command': cmd['command'],
+                'description': cmd['description'],
+                'similarity': cmd['similarity'],
+                'type': cmd.get('type', 'basic')
+            }
+            for cmd in results
+        ],
+        'total': len(results)
+    })
+
 @app.route('/api/query', methods=['POST'])
 def query_requirement():
     """查询需求，返回匹配的命令（RAG 方式）"""
@@ -735,6 +763,14 @@ def health_check():
         'embedding_model': EMBEDDING_MODEL,
         'rag_enabled': True,
         'file_watcher_enabled': True
+    })
+
+@app.route('/health', methods=['GET'])
+def health_check_simple():
+    """健康检查（兼容 aliserver）"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Server is running'
     })
 
 @app.route('/api/rebuild_embeddings', methods=['POST'])

@@ -1,51 +1,48 @@
 """
-CAD智能助手 - 图形界面版（服务器版）
-使用tkinter构建用户界面，连接到服务器
+CADChat 主界面 - 云服务版本
+使用云端向量数据库进行命令匹配
 """
-
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import threading
-import os
-import time
 import requests
+import json
+import os
+import sys
 from datetime import datetime
-
+import re
 from cad_connector import CADConnector
 from kimi_browser import KimiBrowser
 from cloud_client import CloudClient
-from client_config import get_config
-
+import sqlite3
 
 class CADChatGUI:
-    """CAD智能助手图形界面（服务器版）"""
-    
     def __init__(self, root):
         self.root = root
-        self.root.title("CAD智能助手 v0.11 (服务器版)")
-        self.root.geometry("900x650")
-        self.root.minsize(800, 600)
+        self.root.title("CADChat - AI辅助CAD制图工具")
+        self.root.geometry("1200x800")
         
+        # 初始化CAD连接器
         self.cad_connector = CADConnector()
-        self.kimi_browser = None
-        
-        # 从配置管理器获取服务端URL
-        config = get_config()
-        self.cloud_client = CloudClient(config.server_url)
-        
         self.is_connected = False
         self.is_browser_ready = False
-        self.is_cloud_connected = False
-        self.current_code = None
-        self.current_requirement = None
-        self.current_code_id = None
+        self.kimi_browser = None
         
-        self._create_ui()
+        # 云端客户端
+        self.cloud_client = CloudClient()
+        self.is_cloud_connected = False
+        
+        # 当前代码
+        self.current_code = ""
+        self.current_code_id = None
+        self.current_requirement = ""
+        
+        self._setup_ui()
         self._check_cloud_connection()
     
-    def _create_ui(self):
-        """创建用户界面"""
-        main_frame = ttk.Frame(self.root, padding="10")
+    def _setup_ui(self):
+        """设置用户界面"""
+        main_frame = ttk.Frame(self.root, padding="5")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         self.root.columnconfigure(0, weight=1)
@@ -53,33 +50,35 @@ class CADChatGUI:
         main_frame.columnconfigure(0, weight=1)
         main_frame.rowconfigure(3, weight=1)
         
+        # 连接状态框架
         status_frame = ttk.LabelFrame(main_frame, text="连接状态", padding="5")
-        status_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        status_frame.columnconfigure(1, weight=1)
+        status_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        status_frame.columnconfigure(4, weight=1)
         
         ttk.Label(status_frame, text="CAD连接:").grid(row=0, column=0, sticky=tk.W, padx=5)
         self.cad_status_label = ttk.Label(status_frame, text="未连接", foreground="red")
-        self.cad_status_label.grid(row=0, column=1, sticky=tk.W, padx=5)
+        self.cad_status_label.grid(row=0, column=1, sticky=tk.W)
         
         ttk.Button(status_frame, text="连接CAD", command=self._connect_cad).grid(row=0, column=2, padx=5)
         ttk.Button(status_frame, text="断开连接", command=self._disconnect_cad).grid(row=0, column=3, padx=5)
         
         ttk.Label(status_frame, text="浏览器:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=(5, 0))
         self.browser_status_label = ttk.Label(status_frame, text="未启动", foreground="red")
-        self.browser_status_label.grid(row=1, column=1, sticky=tk.W, padx=5, pady=(5, 0))
+        self.browser_status_label.grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
         
         ttk.Button(status_frame, text="启动浏览器", command=self._start_browser).grid(row=1, column=2, padx=5, pady=(5, 0))
         ttk.Button(status_frame, text="刷新页面", command=self._refresh_browser_page).grid(row=1, column=3, padx=5, pady=(5, 0))
         
         ttk.Label(status_frame, text="服务器:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=(5, 0))
         self.cloud_status_label = ttk.Label(status_frame, text="未连接", foreground="red")
-        self.cloud_status_label.grid(row=2, column=1, sticky=tk.W, padx=5, pady=(5, 0))
+        self.cloud_status_label.grid(row=2, column=1, sticky=tk.W, pady=(5, 0))
         
         ttk.Button(status_frame, text="检查连接", command=self._check_cloud_connection).grid(row=2, column=2, padx=5, pady=(5, 0))
         ttk.Button(status_frame, text="热门代码", command=self._show_popular_codes).grid(row=2, column=3, padx=5, pady=(5, 0))
         
+        # 功能需求输入框架
         input_frame = ttk.LabelFrame(main_frame, text="功能需求", padding="5")
-        input_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        input_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         input_frame.columnconfigure(0, weight=1)
         
         self.requirement_text = tk.Text(input_frame, height=3, wrap=tk.WORD)
@@ -87,7 +86,8 @@ class CADChatGUI:
         self.requirement_text.bind('<Return>', self._on_enter_pressed)
         
         btn_frame = ttk.Frame(input_frame)
-        btn_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
+        btn_frame.grid(row=1, column=0, pady=(5, 0), sticky=(tk.W, tk.E))
+        btn_frame.columnconfigure(5, weight=1)
         
         ttk.Button(btn_frame, text="智能查询（服务器）", command=self._query_cloud).grid(row=0, column=0, padx=5)
         ttk.Button(btn_frame, text="生成LISP文件", command=self._generate_lisp_only).grid(row=0, column=1, padx=5)
@@ -96,6 +96,7 @@ class CADChatGUI:
         ttk.Button(btn_frame, text="查看历史", command=self._show_history).grid(row=0, column=4, padx=5)
         ttk.Button(btn_frame, text="清空", command=self._clear_input).grid(row=0, column=5, padx=5)
         
+        # 服务器匹配结果框架
         match_frame = ttk.LabelFrame(main_frame, text="服务器匹配结果", padding="5")
         match_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
         match_frame.columnconfigure(0, weight=1)
@@ -114,31 +115,43 @@ class CADChatGUI:
 
         self.match_text = None
 
+        # 底部区域 - 日志和代码并排显示
         bottom_frame = ttk.Frame(main_frame)
         bottom_frame.grid(row=3, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         bottom_frame.columnconfigure(0, weight=1)
         bottom_frame.rowconfigure(0, weight=1)
 
+        # 日志框架
         log_frame = ttk.LabelFrame(bottom_frame, text="运行日志", padding="3")
         log_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 5))
         self.log_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, state=tk.DISABLED, height=6)
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
+        # 代码框架
         code_frame = ttk.LabelFrame(bottom_frame, text="LISP代码", padding="3")
         code_frame.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.code_text = scrolledtext.ScrolledText(code_frame, wrap=tk.WORD, height=6)
         self.code_text.pack(fill=tk.BOTH, expand=True)
-
+        
+        # 底部按钮框架
         bottom_btn_frame = ttk.Frame(main_frame)
-        bottom_btn_frame.grid(row=4, column=0, sticky=(tk.W, tk.E))
-
+        bottom_btn_frame.grid(row=4, column=0, columnspan=2, pady=(5, 0))
+        
         ttk.Button(bottom_btn_frame, text="保存代码", command=self._save_to_server).grid(row=0, column=0, padx=5)
         ttk.Button(bottom_btn_frame, text="退出", command=self._on_close).grid(row=0, column=1, padx=5)
         
+        # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
     
+    def _on_enter_pressed(self, event):
+        """回车键事件"""
+        if event.state & 0x4:  # Ctrl+Enter
+            self._query_cloud()
+        else:
+            return "break"  # 普通回车键不插入换行
+    
     def _log(self, message, level="INFO"):
-        """添加日志"""
+        """记录日志"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = f"[{timestamp}] [{level}] {message}\n"
         
@@ -146,6 +159,11 @@ class CADChatGUI:
         self.log_text.insert(tk.END, log_entry)
         self.log_text.see(tk.END)
         self.log_text.configure(state=tk.DISABLED)
+    
+    def _show_code(self, code):
+        """显示代码"""
+        self.code_text.delete(1.0, tk.END)
+        self.code_text.insert(tk.END, code)
     
     def _show_match_result(self, message):
         """显示匹配结果（使用树形列表）"""
@@ -157,48 +175,79 @@ class CADChatGUI:
         if isinstance(message, str):
             return
 
-        # 支持两种格式：
+        # 支持多种格式：
         # 1. {"rag_results": [...]} - 直接传入
         # 2. {"result": {"rag_results": [...]}} - 服务器返回的完整响应
-        results = message.get('rag_results', [])
+        # 3. {"all_results": [...]} - 新增格式，包含前3个结果
+        results = message.get('all_results', [])
+        if not results:
+            results = message.get('rag_results', [])
 
         # 如果没有在顶层找到，检查 result 字段
         if not results and isinstance(message, dict):
             result_data = message.get('result', {})
             if isinstance(result_data, dict):
-                results = result_data.get('rag_results', [])
+                if 'all_results' in result_data:
+                    results = result_data['all_results']
+                elif 'rag_results' in result_data:
+                    results = result_data['rag_results']
 
         if results:
-            for result in results[:3]:
+            for i, result in enumerate(results[:3]):  # 只显示前3个结果
                 command = result.get('command', '')
                 description = result.get('description', '')
-                source_type = result.get('source_type', 'unknown')
-
-                if source_type == 'user_code':
-                    source = '用户代码'
-                    self.match_tree.insert('', tk.END, values=(command, description, source), tags=('user_code',))
-                elif source_type == 'lisp':
-                    source = 'LISP命令'
-                    self.match_tree.insert('', tk.END, values=(command, description, source))
-                else:
-                    source = '基本命令'
-                    self.match_tree.insert('', tk.END, values=(command, description, source))
+                category = result.get('category', 'basic_command')
+                
+                # 兼容旧字段 source_type 和新字段 category
+                source_type = result.get('source_type', '')
+                if source_type:
+                    # 旧格式
+                    if source_type == 'user_code':
+                        source = '用户代码'
+                        self.match_tree.insert('', tk.END, values=(command, description, source), tags=('user_code',))
+                    elif source_type == 'lisp':
+                        source = 'LISP命令'
+                        self.match_tree.insert('', tk.END, values=(command, description, source))
+                    else:
+                        source = '基本命令'
+                        self.match_tree.insert('', tk.END, values=(command, description, source))
+                elif category:
+                    # 新格式 - category: basic_command, cad_extension, user_program
+                    if category == 'user_program':
+                        source = '用户代码'
+                        self.match_tree.insert('', tk.END, values=(command, description, source), tags=('user_code',))
+                    elif category == 'cad_extension':
+                        source = 'LISP命令'
+                        self.match_tree.insert('', tk.END, values=(command, description, source))
+                    else:
+                        source = '基本命令'
+                        self.match_tree.insert('', tk.END, values=(command, description, source))
     
     def _on_match_double_click(self, event):
-        """双击匹配结果，如果是用户代码则显示内容"""
+        """双击匹配结果，显示相应的LISP代码"""
         selection = self.match_tree.selection()
         if not selection:
             return
         
         item = selection[0]
         values = self.match_tree.item(item)['values']
-        source = values[2] if len(values) > 2 else ''
-        
-        if source != '用户代码':
+        if len(values) < 3:
             return
-        
+            
         command = values[0]
-        self._load_user_code_by_command(command)
+        description = values[1]
+        source = values[2]
+        
+        # 根据来源类型加载相应的代码
+        if source == '用户代码':
+            # 加载用户代码
+            self._load_user_code_by_command(command)
+        elif source == 'LISP命令':
+            # 加载LISP命令代码
+            self._show_code(f"; LISP Command: {command}\n; Description: {description}\n\n; Generated code here...")
+        else:
+            # 基本命令的处理
+            self._show_code(f"; Basic Command: {command}\n; Description: {description}\n\n; Basic command implementation here...")
     
     def _load_user_code_by_command(self, command: str):
         """根据命令名称加载用户代码"""
@@ -215,64 +264,38 @@ class CADChatGUI:
                 if result.get('success'):
                     codes = result.get('codes', [])
                     for code_info in codes:
-                        if code_info.get('command', '').lower() == command.lower():
-                            self._load_user_code_content(code_info.get('code_id'))
+                        if code_info.get('command') == command:
+                            lisp_code = code_info.get('lisp_code', '')
+                            self.current_code = lisp_code
+                            self.current_code_id = code_info.get('id')
+                            self.root.after(0, lambda: self._show_code(lisp_code))
+                            self._log(f"成功加载用户代码: {command}")
                             return
-                    
-                    messagebox.showwarning("警告", f"未找到命令 '{command}' 的代码")
+                    self._log(f"未找到命令对应的用户代码: {command}")
                 else:
-                    messagebox.showerror("失败", result.get('message', '加载失败'))
+                    self._log("获取用户代码列表失败", "ERROR")
+            else:
+                self._log(f"获取用户代码列表失败: {response.status_code}", "ERROR")
         except Exception as e:
-            messagebox.showerror("失败", f"加载失败: {e}")
-    
-    def _load_user_code_content(self, code_id: str):
-        """加载用户代码内容"""
-        try:
-            response = requests.get(
-                f"{self.cloud_client.server_url}/api/user_codes/get/{code_id}",
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('success'):
-                    code = result.get('code', '')
-                    self._show_code(code)
-                    self._log("用户代码已加载")
-                    messagebox.showinfo("成功", "用户代码已加载到编辑器")
-                else:
-                    messagebox.showerror("失败", result.get('message', '加载失败'))
-        except Exception as e:
-            messagebox.showerror("失败", f"加载失败: {e}")
-    
-    def _show_code(self, code):
-        """显示代码"""
-        self.current_code = code
-        self.code_text.delete(1.0, tk.END)
-        self.code_text.insert(tk.END, code)
+            self._log(f"加载用户代码时出错: {e}", "ERROR")
     
     def _check_cloud_connection(self):
-        """检查本地连接"""
+        """检查云端连接状态"""
         def check():
             try:
                 stats = self.cloud_client.get_stats()
                 if stats:
                     self.is_cloud_connected = True
                     self.root.after(0, lambda: self._update_cloud_status(True))
-                    llm_engine = stats.get('llm_engine', 'unknown')
-                    model = stats.get('model', 'unknown')
-                    llm_available = stats.get('llm_available', False)
                     
-                    # 检测服务器类型
-                    server_type = "原版服务器"
                     if stats.get('rag_enabled'):
                         server_type = "RAG 服务器"
                         embedding_model = stats.get('embedding_model', 'unknown')
                         self._log(f"服务器已连接 - 类型: {server_type}")
                         self._log(f"嵌入模型: {embedding_model}")
                     
-                    self._log(f"引擎: {llm_engine}, 模型: {model}")
-                    self._log(f"LLM可用: {'是' if llm_available else '否'}")
+                    self._log(f"引擎: {stats.get('engine', 'unknown')}, 模型: {stats.get('model', 'unknown')}")
+                    self._log(f"LLM可用: {'是' if stats.get('llm_available', False) else '否'}")
                 else:
                     self.is_cloud_connected = False
                     self.root.after(0, lambda: self._update_cloud_status(False))
@@ -292,7 +315,7 @@ class CADChatGUI:
             self.cloud_status_label.config(text="未连接", foreground="red")
     
     def _query_cloud(self):
-        """查询本地代码库"""
+        """查询云端代码库"""
         requirement = self.requirement_text.get(1.0, tk.END).strip()
         if not requirement:
             messagebox.showwarning("警告", "请输入功能需求")
@@ -311,44 +334,79 @@ class CADChatGUI:
             result = self.cloud_client.query_requirement(requirement)
             
             if result.get('matched'):
-                code = result['result']['code']
-                self.current_code_id = code['id']
+                # 显示前3个匹配结果
+                self.root.after(0, lambda: self._show_match_result(result))
                 
-                is_basic_command = code.get('is_basic_command', False)
-                
-                if is_basic_command:
-                    match_info = f"✓ 找到基础命令\n"
-                    match_info += f"  命令: {code['command']}\n"
-                    match_info += f"  别名: {code['alias']}\n"
-                    match_info += f"  描述: {code['description']}\n"
-                    match_info += f"  分类: {code['category']}\n"
+                # 检查是否找到了匹配结果
+                all_results = result.get('all_results', [])
+                if all_results:
+                    top_result = all_results[0]
+                    code = {
+                        'id': hash(top_result.get('command', '')) % 10000,
+                        'command': top_result.get('command', ''),
+                        'description': top_result.get('description', ''),
+                        'filename': top_result.get('filename', ''),
+                        'timestamp': top_result.get('timestamp', ''),
+                        'lisp_code': f"; Auto-generated for: {top_result.get('description', '')}",
+                        'is_basic_command': True
+                    }
                     
-                    self.root.after(0, lambda: self._show_match_result(result))
-                    self.root.after(0, lambda: self._log(f"找到基础命令: {code['command']} ({code['alias']})"))
+                    is_basic_command = code.get('is_basic_command', False)
                     
-                    self.current_code = ""
-                    self.root.after(0, lambda: self._show_code(self.current_code))
-                else:
-                    match_info = f"✓ 找到匹配代码（置信度: {result['result']['confidence']:.2f}）\n"
-                    match_info += f"  命令: {code['command']}\n"
-                    match_info += f"  描述: {code['description']}\n"
-                    match_info += f"  分类: {code['category']}\n"
-                    if result['result'].get('llm_used'):
-                        match_info += f"  匹配方式: Qwen LLM"
-                    else:
-                        match_info += f"  匹配方式: 关键词"
-                    
-                    self.root.after(0, lambda: self._show_match_result(result))
-                    self.root.after(0, lambda: self._log(f"找到匹配代码: {code['description']}"))
-                    
-                    lisp_code = code.get('lisp_code', '')
-                    if lisp_code:
-                        self.current_code = lisp_code
-                        self._save_to_temp()
-                        self.root.after(0, lambda: self._show_code(self.current_code))
-                    else:
+                    if is_basic_command:
+                        self.current_code_id = code['id']
+                        match_info = f"✓ 找到基础命令\n"
+                        match_info += f"  命令: {code['command']}\n"
+                        match_info += f"  描述: {code['description']}\n"
+                        
+                        self.root.after(0, lambda: self._log(f"找到基础命令: {code['command']}"))
+                        
+                        # 不在这里显示代码，只在双击时显示
                         self.current_code = ""
-                        self.root.after(0, lambda: self._show_code(self.current_code))
+                    else:
+                        self.current_code_id = code['id']
+                        confidence = result['result'].get('confidence', 0.0)
+                        match_info = f"✓ 找到匹配代码（置信度: {confidence:.2f}）\n"
+                        match_info += f"  命令: {code['command']}\n"
+                        match_info += f"  描述: {code['description']}\n"
+                        
+                        self.root.after(0, lambda: self._log(f"找到匹配代码: {code['description']}"))
+                        
+                        # 不在这里显示代码，只在双击时显示
+                        self.current_code = ""
+                else:
+                    # 如果没有all_results，使用旧的处理方式
+                    code = result['result']['code']
+                    self.current_code_id = code['id']
+                    
+                    is_basic_command = code.get('is_basic_command', False)
+                    
+                    if is_basic_command:
+                        match_info = f"✓ 找到基础命令\n"
+                        match_info += f"  命令: {code['command']}\n"
+                        match_info += f"  别名: {code['alias']}\n"
+                        match_info += f"  描述: {code['description']}\n"
+                        match_info += f"  分类: {code['category']}\n"
+                        
+                        self.root.after(0, lambda: self._log(f"找到基础命令: {code['command']} ({code['alias']})"))
+                        
+                        # 不在这里显示代码，只在双击时显示
+                        self.current_code = ""
+                    else:
+                        confidence = result['result'].get('confidence', 0.0)
+                        match_info = f"✓ 找到匹配代码（置信度: {confidence:.2f}）\n"
+                        match_info += f"  命令: {code['command']}\n"
+                        match_info += f"  描述: {code['description']}\n"
+                        match_info += f"  分类: {code['category']}\n"
+                        if result['result'].get('llm_used'):
+                            match_info += f"  匹配方式: Qwen LLM"
+                        else:
+                            match_info += f"  匹配方式: 关键词"
+                        
+                        self.root.after(0, lambda: self._log(f"找到匹配代码: {code['description']}"))
+                        
+                        # 不在这里显示代码，只在双击时显示
+                        self.current_code = ""
             else:
                 reason = result['result'].get('reason', '未知原因')
                 suggestion = result['result'].get('suggestion', '')
@@ -360,7 +418,7 @@ class CADChatGUI:
                 
                 self.root.after(0, lambda: self._show_match_result({"rag_results": []}))
                 self.root.after(0, lambda: self._log(f"未找到匹配代码: {reason}"))
-        
+
         threading.Thread(target=query, daemon=True).start()
     
     def _connect_cad(self):
@@ -403,6 +461,15 @@ class CADChatGUI:
         """启动浏览器并自动打开Kimi"""
         self._log("正在启动浏览器...")
         self.kimi_browser = KimiBrowser(headless=False)
+        
+        def login_needed_callback():
+            self.root.after(0, lambda: messagebox.showinfo(
+                "提示", 
+                "需要登录Kimi账号\n请在浏览器中完成登录后点击确定继续"
+            ))
+        
+        self.kimi_browser.set_login_callback(login_needed_callback)
+        
         if self.kimi_browser.start():
             self.is_browser_ready = True
             self._update_browser_status(True)
@@ -411,10 +478,6 @@ class CADChatGUI:
             self._log("正在打开Kimi网站...")
             if self.kimi_browser.navigate_to_kimi():
                 self._log("Kimi网站已打开")
-                messagebox.showinfo(
-                    "提示", 
-                    "Kimi已打开\n如果是首次使用，请先登录Kimi账号\n登录完成后点击确定继续"
-                )
             else:
                 self._log("打开Kimi网站失败", "ERROR")
         else:
@@ -430,56 +493,35 @@ class CADChatGUI:
     
     def _refresh_browser_page(self):
         """刷新浏览器页面"""
-        if not self.kimi_browser:
-            messagebox.showwarning("警告", "请先启动浏览器")
-            return
-        
-        self._log("正在刷新Kimi页面...")
-        try:
-            if self.kimi_browser.navigate_to_kimi():
-                self._log("页面刷新成功")
-            else:
-                self._log("页面刷新失败", "ERROR")
-        except Exception as e:
-            self._log(f"刷新页面时出错: {str(e)}", "ERROR")
-    
-    def _on_enter_pressed(self, event):
-        """处理回车键"""
-        if event.state & 0x4:
-            self._generate_and_execute()
-            return 'break'
-        return None
+        if self.kimi_browser and self.is_browser_ready:
+            self.kimi_browser.refresh()
+            self._log("浏览器页面已刷新")
+        else:
+            self._log("浏览器未启动", "WARNING")
     
     def _generate_lisp_only(self):
-        """只生成LISP代码，不执行"""
+        """仅生成LISP代码"""
         requirement = self.requirement_text.get(1.0, tk.END).strip()
         if not requirement:
             messagebox.showwarning("警告", "请输入功能需求")
             return
         
-        if not self.kimi_browser:
-            messagebox.showwarning("警告", "请先启动浏览器并打开Kimi")
+        if not self.is_browser_ready:
+            messagebox.showwarning("警告", "浏览器未就绪")
             return
         
-        self.current_requirement = requirement
-        
-        self._log(f"正在生成代码: {requirement[:50]}...")
-        self._log("正在调用Kimi生成代码...")
+        self._log(f"正在生成LISP代码: {requirement[:50]}...")
         
         try:
             code = self.kimi_browser.generate_lisp_code(requirement)
-            
             if code:
-                self._log("代码生成成功")
+                self.current_code = code
                 self._show_code(code)
-                self._save_to_temp()
-                self._log("提示: 如需调整代码，请直接在上方需求框修改后重新生成")
+                self._log("LISP代码生成成功")
             else:
-                self._log("代码生成失败", "ERROR")
-                messagebox.showerror("错误", "代码生成失败，请检查浏览器是否正常")
+                self._log("LISP代码生成失败", "ERROR")
         except Exception as e:
-            self._log(f"生成代码时出错: {str(e)}", "ERROR")
-            messagebox.showerror("错误", f"生成代码时出错: {str(e)}")
+            self._log(f"生成代码出错: {str(e)}", "ERROR")
     
     def _generate_and_execute(self):
         """生成并执行代码"""
@@ -489,31 +531,31 @@ class CADChatGUI:
             return
         
         if not self.is_connected:
-            messagebox.showwarning("警告", "请先连接CAD")
+            messagebox.showwarning("警告", "CAD未连接")
             return
         
-        if not self.kimi_browser:
-            messagebox.showwarning("警告", "请先启动浏览器并打开Kimi")
+        if not self.is_browser_ready:
+            messagebox.showwarning("警告", "浏览器未就绪")
             return
         
-        self.current_requirement = requirement
-        
-        self._log(f"正在生成代码: {requirement[:50]}...")
-        self._log("正在调用Kimi生成代码...")
+        self._log(f"正在生成并执行代码: {requirement[:50]}...")
         
         try:
             code = self.kimi_browser.generate_lisp_code(requirement)
-            
             if code:
-                self._log("代码生成成功")
+                self.current_code = code
                 self._show_code(code)
-                self._execute_current_code()
+                
+                success, error, cad_output = self.cad_connector.execute_lisp_code(code)
+                
+                if success:
+                    self._log(f"代码执行成功: {cad_output}")
+                else:
+                    self._log(f"代码执行失败: {error}", "ERROR")
             else:
                 self._log("代码生成失败", "ERROR")
-                messagebox.showerror("错误", "代码生成失败，请检查浏览器是否正常")
         except Exception as e:
-            self._log(f"生成代码时出错: {str(e)}", "ERROR")
-            messagebox.showerror("错误", f"生成代码时出错: {str(e)}")
+            self._log(f"生成代码出错: {str(e)}", "ERROR")
     
     def _execute_current_code(self):
         """执行当前代码"""
@@ -523,60 +565,34 @@ class CADChatGUI:
             return
         
         if not self.is_connected:
-            messagebox.showwarning("警告", "请先连接CAD")
+            messagebox.showwarning("警告", "CAD未连接")
             return
         
-        self.current_code = code
+        def execute():
+            self._log("正在执行当前代码...")
+            success, error, cad_output = self.cad_connector.execute_lisp_code(code)
+            
+            if success:
+                self.root.after(0, lambda: self._log(f"代码执行成功: {cad_output}"))
+            else:
+                self.root.after(0, lambda: self._log(f"代码执行失败: {error}", "ERROR"))
         
-        self._log("正在执行LISP代码...")
-        success, error, cad_output = self.cad_connector.execute_lisp_code(code)
-        
-        if success:
-            self._log("代码加载完成")
-            if cad_output:
-                self._log(f"CAD输出: {cad_output}")
-            self._log("请在CAD命令行中输入命令来执行功能")
-        else:
-            self._log(f"代码执行失败: {error}", "ERROR")
-            if cad_output:
-                self._log(f"CAD输出: {cad_output}", "ERROR")
-    
-    def _submit_feedback(self, success=None, feedback=None):
-        """提交用户反馈"""
-        messagebox.showinfo("提示", "反馈功能暂未启用")
-        return
-    
-    def _save_to_temp(self):
-        """保存代码到temp目录"""
-        if not self.current_code:
-            return
-        
-        timestamp = str(int(time.time()))
-        filename = f"cadchat_{timestamp}.lsp"
-        filepath = os.path.join(self.cad_connector.temp_dir, filename)
-        
-        try:
-            with open(filepath, 'w', encoding='gb2312') as f:
-                f.write(self.current_code)
-            self._log(f"代码已保存到: {filename}")
-        except Exception as e:
-            self._log(f"保存代码失败: {e}", "ERROR")
+        threading.Thread(target=execute, daemon=True).start()
     
     def _save_to_server(self):
-        """保存代码到服务器（先预览确认）"""
+        """保存代码到服务器（先调用Kimi分析代码）"""
         code = self.code_text.get(1.0, tk.END).strip()
         if not code:
             messagebox.showwarning("警告", "没有可保存的代码")
             return
         
-        if not self.kimi_browser:
+        if not self.is_browser_ready:
             messagebox.showwarning("警告", "请先启动浏览器并打开Kimi")
             return
         
         self._log("正在调用Kimi分析代码...")
         
         try:
-            # 直接调用Kimi分析代码（浏览器已经在Kimi页面）
             result = self.kimi_browser.analyze_code(code)
             
             if result:
@@ -668,179 +684,185 @@ class CADChatGUI:
             self._log(f"保存失败: {e}", "ERROR")
             messagebox.showerror("失败", f"保存失败: {e}")
     
-    def _save_current_code(self):
-        """保存当前代码到本地文件"""
-        if not self.current_code:
-            messagebox.showwarning("警告", "没有可保存的代码")
-            return
-        
-        from tkinter import filedialog
-        
-        filepath = filedialog.asksaveasfilename(
-            title="保存 LSP 代码",
-            defaultextension=".lsp",
-            filetypes=[("LISP 文件", "*.lsp"), ("所有文件", "*.*")],
-            initialfile=f"cadchat_{int(time.time())}.lsp"
-        )
-        
-        if not filepath:
-            return
-        
-        try:
-            with open(filepath, 'w', encoding='gb2312') as f:
-                f.write(self.current_code)
-            self._log(f"代码已保存到: {os.path.basename(filepath)}")
-            messagebox.showinfo("成功", f"代码已保存到:\n{filepath}")
-        except Exception as e:
-            self._log(f"保存代码失败: {e}", "ERROR")
-            messagebox.showerror("错误", f"保存代码失败:\n{e}")
-    
-    def _extract_tags(self, requirement: str) -> list:
-        """从需求中提取标签"""
-        keywords = ['圆', '线', '矩形', '多边形', '文字', '标注', '尺寸', '图层', '块', '删除', '复制', '移动', '旋转', '缩放', '镜像', '阵列', '修剪', '延伸', '圆角', '倒角']
-        tags = []
-        for kw in keywords:
-            if kw in requirement:
-                tags.append(kw)
-        return tags
-    
-    def _show_history(self):
-        """显示历史代码"""
-        if not self.is_cloud_connected:
-            messagebox.showwarning("警告", "服务器未连接")
-            return
-        
-        history_window = tk.Toplevel(self.root)
-        history_window.title("历史代码")
-        history_window.geometry("700x500")
-        
-        list_frame = ttk.Frame(history_window, padding="10")
-        list_frame.pack(fill=tk.BOTH, expand=True)
-        
-        search_frame = ttk.Frame(list_frame)
-        search_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(search_frame, text="搜索:").pack(side=tk.LEFT)
-        search_entry = ttk.Entry(search_frame)
-        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        
-        columns = ('description', 'usage_count')
-        tree = ttk.Treeview(list_frame, columns=columns, show='headings')
-        tree.heading('description', text='功能描述')
-        tree.heading('usage_count', text='使用次数')
-        tree.column('description', width=500)
-        tree.column('usage_count', width=100)
-        tree.pack(fill=tk.BOTH, expand=True)
-        
-        def load_history(search_term=''):
-            for item in tree.get_children():
-                tree.delete(item)
-            
-            codes = self.cloud_client.search_codes(search_term)
-            for code in codes:
-                tree.insert('', tk.END, values=(code['description'], code['usage_count']))
-        
-        load_history()
-        
-        def on_search():
-            load_history(search_entry.get())
-        
-        ttk.Button(search_frame, text="搜索", command=on_search).pack(side=tk.LEFT, padx=5)
-        
-        def on_double_click(event):
-            selection = tree.selection()
-            if selection:
-                item = tree.item(selection[0])
-                description = item['values'][0]
-                codes = self.cloud_client.search_codes(description, limit=1)
-                if codes:
-                    self.requirement_text.delete(1.0, tk.END)
-                    self.requirement_text.insert(tk.END, description)
-                    self._show_code(codes[0]['lisp_code'])
-                    history_window.destroy()
-        
-        tree.bind('<Double-1>', on_double_click)
-    
-    def _show_popular_codes(self):
-        """显示服务器热门代码"""
-        if not self.is_cloud_connected:
-            messagebox.showwarning("警告", "服务器未连接")
-            return
-        
-        popular_window = tk.Toplevel(self.root)
-        popular_window.title("服务器热门代码")
-        popular_window.geometry("800x600")
-        
-        list_frame = ttk.Frame(popular_window, padding="10")
-        list_frame.pack(fill=tk.BOTH, expand=True)
-        
-        columns = ('description', 'usage_count', 'success_rate')
-        tree = ttk.Treeview(list_frame, columns=columns, show='headings')
-        tree.heading('description', text='描述')
-        tree.heading('usage_count', text='使用次数')
-        tree.heading('success_rate', text='成功率')
-        tree.column('description', width=500)
-        tree.column('usage_count', width=100)
-        tree.column('success_rate', width=100)
-        tree.pack(fill=tk.BOTH, expand=True)
-        
-        def load_popular():
-            codes = self.cloud_client.get_popular_codes(limit=20)
-            for code in codes:
-                tree.insert('', tk.END, values=(
-                    code['description'],
-                    code['usage_count'],
-                    f"{code['success_rate']:.2%}"
-                ))
-        
-        load_popular()
-        
-        def on_double_click(event):
-            selection = tree.selection()
-            if selection:
-                item = tree.item(selection[0])
-                description = item['values'][0]
-                codes = self.cloud_client.get_popular_codes(limit=100)
-                for code in codes:
-                    if code['description'] == description:
-                        self.requirement_text.delete(1.0, tk.END)
-                        self.requirement_text.insert(tk.END, description)
-                        self._show_code(code['lisp_code'])
-                        self.current_code_id = code['id']
-                        popular_window.destroy()
-                        break
-        
-        tree.bind('<Double-1>', on_double_click)
-    
     def _clear_input(self):
         """清空输入"""
         self.requirement_text.delete(1.0, tk.END)
         self.code_text.delete(1.0, tk.END)
         self.match_tree.delete(*self.match_tree.get_children())
-        self.current_code = None
-        self.current_requirement = None
-        self.current_code_id = None
+    
+    def _show_history(self):
+        """显示历史记录"""
+        # 创建历史记录窗口
+        history_window = tk.Toplevel(self.root)
+        history_window.title("历史记录")
+        history_window.geometry("800x500")
+        history_window.transient(self.root)
+        history_window.grab_set()
+        
+        # 居中显示
+        history_window.geometry(f"+{self.root.winfo_rootx() + 50}+{self.root.winfo_rooty() + 50}")
+        
+        # 创建框架
+        frame = ttk.Frame(history_window, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建表格
+        columns = ('time', 'requirement', 'command', 'result')
+        tree = ttk.Treeview(frame, columns=columns, show='headings', height=15)
+        tree.heading('time', text='时间')
+        tree.heading('requirement', text='需求')
+        tree.heading('command', text='命令')
+        tree.heading('result', text='结果')
+        tree.column('time', width=150)
+        tree.column('requirement', width=200)
+        tree.column('command', width=100)
+        tree.column('result', width=300)
+        
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+        
+        # 尝试加载历史记录
+        try:
+            conn = sqlite3.connect('cadchat_history.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT timestamp, requirement, command, result 
+                FROM history 
+                ORDER BY timestamp DESC 
+                LIMIT 100
+            ''')
+            records = cursor.fetchall()
+            conn.close()
+            
+            for record in records:
+                tree.insert('', tk.END, values=record)
+        except:
+            pass  # 如果数据库不存在或出错，就不加载历史记录
+    
+    def _show_popular_codes(self):
+        """显示热门代码"""
+        # 创建热门代码窗口
+        popular_window = tk.Toplevel(self.root)
+        popular_window.title("热门代码")
+        popular_window.geometry("700x500")
+        popular_window.transient(self.root)
+        popular_window.grab_set()
+        
+        # 居中显示
+        popular_window.geometry(f"+{self.root.winfo_rootx() + 50}+{self.root.winfo_rooty() + 50}")
+        
+        # 创建框架
+        frame = ttk.Frame(popular_window, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建搜索框
+        search_frame = ttk.Frame(frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(search_frame, text="搜索:").pack(side=tk.LEFT)
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        
+        def on_search():
+            keyword = search_var.get().strip().lower()
+            # 清空现有项目
+            for item in tree.get_children():
+                tree.delete(item)
+            
+            try:
+                # 从服务器获取热门代码
+                response = requests.get(
+                    f"{self.cloud_client.server_url}/api/popular_codes",
+                    params={"limit": 50, "keyword": keyword},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('success'):
+                        codes = result.get('codes', [])
+                        
+                        for code in codes:
+                            description = code.get('description', '')
+                            usage_count = code.get('usage_count', 0)
+                            success_rate = code.get('success_rate', 0.0)
+                            
+                            tree.insert('', tk.END, values=(
+                                code.get('command', ''),
+                                description,
+                                usage_count,
+                                f"{success_rate:.2%}"
+                            ))
+                    else:
+                        self._log("获取热门代码失败", "ERROR")
+                else:
+                    self._log(f"获取热门代码失败: {response.status_code}", "ERROR")
+            except Exception as e:
+                self._log(f"获取热门代码时出错: {e}", "ERROR")
+        
+        ttk.Button(search_frame, text="搜索", command=on_search).pack(side=tk.LEFT, padx=5)
+        
+        # 创建表格
+        columns = ('command', 'description', 'usage_count', 'success_rate')
+        tree = ttk.Treeview(frame, columns=columns, show='headings', height=15)
+        tree.heading('command', text='命令')
+        tree.heading('description', text='描述')
+        tree.heading('usage_count', text='使用次数')
+        tree.heading('success_rate', text='成功率')
+        tree.column('command', width=100)
+        tree.column('description', width=300)
+        tree.column('usage_count', width=80)
+        tree.column('success_rate', width=80)
+        
+        # 绑定双击事件
+        def on_item_double_click(event):
+            selection = tree.selection()
+            if not selection:
+                return
+            
+            item = selection[0]
+            values = tree.item(item)['values']
+            if values:
+                description = values[1]
+                # 将描述填入主窗口的需求框
+                self.requirement_text.delete(1.0, tk.END)
+                self.requirement_text.insert(tk.END, description)
+                
+                # 关闭窗口
+                popular_window.destroy()
+        
+        tree.bind('<Double-Button-1>', on_item_double_click)
+        
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 初始加载热门代码
+        on_search()
     
     def _on_close(self):
-        """关闭程序"""
+        """关闭应用程序"""
         if self.kimi_browser:
-            try:
-                self.kimi_browser.stop()
-            except:
-                pass
-        
-        if self.is_connected:
-            self.cad_connector.disconnect()
-        
+            self.kimi_browser.close()
+        self.root.quit()
         self.root.destroy()
 
 
 def main():
-    """主函数"""
     root = tk.Tk()
     app = CADChatGUI(root)
     root.mainloop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

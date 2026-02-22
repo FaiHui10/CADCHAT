@@ -1,220 +1,205 @@
 # AutoCAD 基本命令库
-# 格式: 命令名称|描述|快捷键|命令类型
-# 命令类型: basic(基本命令), advanced(高级命令), lisp(Lisp命令)
+# 格式: 命令名|描述|文件名|时间戳|命令类型
+# 命令类型: basic(基本命令), lisp(CAD扩展命令), user_program(用户编程)
 
 # === 绘图命令 ===
-LINE|绘制直线|L|basic
-CIRCLE|绘制圆|C|basic
-ARC|绘制圆弧|A|basic
-RECTANG|绘制矩形|REC|basic
-POLYGON|绘制正多边形|POL|basic
-PLINE|绘制多段线|PL|basic
-SPLINE|绘制样条曲线|SPL|basic
-ELLIPSE|绘制椭圆|EL|basic
-POINT|绘制点|PO|basic
-DIVIDE|定数等分|DIV|basic
-MEASURE|定距等分|ME|basic
-HATCH|填充图案|H|basic
-REGION|创建面域|REG|basic
+LINE|绘制直线||basic_commands.lsp|2024-01-01|basic
+CIRCLE|绘制圆||basic_commands.lsp|2024-01-01|basic
+ARC|绘制圆弧||basic_commands.lsp|2024-01-01|basic
+RECTANG|绘制矩形||basic_commands.lsp|2024-01-01|basic
+POLYGON|绘制正多边形||basic_commands.lsp|2024-01-01|basic
+PLINE|绘制多段线||basic_commands.lsp|2024-01-01|basic
+SPLINE|绘制样条曲线||basic_commands.lsp|2024-01-01|basic
+ELLIPSE|绘制椭圆||basic_commands.lsp|2024-01-01|basic
+POINT|绘制点||basic_commands.lsp|2024-01-01|basic
+DIVIDE|定数等分||basic_commands.lsp|2024-01-01|basic
+MEASURE|定距等分||basic_commands.lsp|2024-01-01|basic
+HATCH|填充图案||basic_commands.lsp|2024-01-01|basic
+REGION|创建面域||basic_commands.lsp|2024-01-01|basic
 
 # === 修改命令 ===
-ERASE|删除对象|E|basic
-COPY|复制对象|CO|basic
-MIRROR|镜像对象|MI|basic
-OFFSET|偏移对象|O|basic
-ARRAY|阵列对象|AR|basic
-MOVE|移动对象|M|basic
-ROTATE|旋转对象|RO|basic
-SCALE|缩放对象|SC|basic
-STRETCH|拉伸对象|S|basic
-TRIM|修剪对象|TR|basic
-EXTEND|延伸对象|EX|basic
-BREAK|打断对象|BR|basic
-JOIN|合并对象|J|basic
-CHAMFER|倒角|CHA|basic
-FILLET|圆角|F|basic
-EXPLODE|分解对象|X|basic
+ERASE|删除对象||basic_commands.lsp|2024-01-01|basic
+COPY|复制对象||basic_commands.lsp|2024-01-01|basic
+MIRROR|镜像对象||basic_commands.lsp|2024-01-01|basic
+OFFSET|偏移对象||basic_commands.lsp|2024-01-01|basic
+ARRAY|阵列对象||basic_commands.lsp|2024-01-01|basic
+MOVE|移动对象||basic_commands.lsp|2024-01-01|basic
+ROTATE|旋转对象||basic_commands.lsp|2024-01-01|basic
+SCALE|缩放对象||basic_commands.lsp|2024-01-01|basic
+STRETCH|拉伸对象||basic_commands.lsp|2024-01-01|basic
+TRIM|修剪对象||basic_commands.lsp|2024-01-01|basic
+EXTEND|延伸对象||basic_commands.lsp|2024-01-01|basic
+BREAK|打断对象||basic_commands.lsp|2024-01-01|basic
+JOIN|合并对象||basic_commands.lsp|2024-01-01|basic
+CHAMFER|倒角||basic_commands.lsp|2024-01-01|basic
+FILLET|圆角||basic_commands.lsp|2024-01-01|basic
+EXPLODE|分解对象||basic_commands.lsp|2024-01-01|basic
 
 # === 查询命令 ===
-DIST|测量距离|DI|basic
-AREA|计算面积|AA|basic
-LIST|列出对象信息|LI|basic
-ID|显示坐标|ID|basic
-PROPERTIES|显示特性|CH|basic
-MASSPROP|计算质量特性|MASSPROP|basic
+DIST|测量距离||basic_commands.lsp|2024-01-01|basic
+AREA|计算面积||basic_commands.lsp|2024-01-01|basic
+LIST|列出对象信息||basic_commands.lsp|2024-01-01|basic
+ID|显示坐标||basic_commands.lsp|2024-01-01|basic
+PROPERTIES|显示特性||basic_commands.lsp|2024-01-01|basic
+MASSPROP|计算质量特性||basic_commands.lsp|2024-01-01|basic
 
 # === 视图控制 ===
-ZOOM|缩放视图|Z|basic
-PAN|平移视图|P|basic
-3DORBIT|三维动态观察|3DO|basic
-VIEW|视图管理|V|basic
-VPOINT|设置视点|-VP|basic
-DVIEW|动态视图|DV|basic
+ZOOM|缩放视图||basic_commands.lsp|2024-01-01|basic
+PAN|平移视图||basic_commands.lsp|2024-01-01|basic
+3DORBIT|三维动态观察||basic_commands.lsp|2024-01-01|basic
+VIEW|视图管理||basic_commands.lsp|2024-01-01|basic
+VPOINT|设置视点||basic_commands.lsp|2024-01-01|basic
+DVIEW|动态视图||basic_commands.lsp|2024-01-01|basic
 
 # === 图层管理 ===
-LAYER|图层管理|LA|basic
-LAYERP|上一个图层|LAYP|basic
-LAYERSTATE|图层状态|LAS|basic
-COLOR|设置颜色|COL|basic
-LINETYPE|设置线型|LT|basic
-LWEIGHT|设置线宽|LW|basic
+LAYER|图层管理||basic_commands.lsp|2024-01-01|basic
+LAYERP|上一个图层||basic_commands.lsp|2024-01-01|basic
+LAYERSTATE|图层状态||basic_commands.lsp|2024-01-01|basic
+COLOR|设置颜色||basic_commands.lsp|2024-01-01|basic
+LINETYPE|设置线型||basic_commands.lsp|2024-01-01|basic
+LWEIGHT|设置线宽||basic_commands.lsp|2024-01-01|basic
 
 # === 文字和标注 ===
-TEXT|单行文字|DT|basic
-MTEXT|多行文字|T|basic
-DTEXT|动态文字|DT|basic
-DDEDIT|编辑文字|ED|basic
-DIMLINEAR|线性标注|DLI|basic
-DIMALIGNED|对齐标注|DAL|basic
-DIMRADIUS|半径标注|DRA|basic
-DIMDIAMETER|直径标注|DDI|basic
-DIMANGULAR|角度标注|DAN|basic
-DIMORDINATE|坐标标注|DOR|basic
-DIMBASELINE|基线标注|DBA|basic
-DIMCONTINUE|连续标注|DCO|basic
-DIMSTYLE|标注样式|D|basic
-DIMEDIT|编辑标注|DED|basic
-DIMTEDIT|编辑标注文字位置|DIMTED|basic
+TEXT|单行文字||basic_commands.lsp|2024-01-01|basic
+MTEXT|多行文字||basic_commands.lsp|2024-01-01|basic
+DTEXT|动态文字||basic_commands.lsp|2024-01-01|basic
+DDEDIT|编辑文字||basic_commands.lsp|2024-01-01|basic
+DIMLINEAR|线性标注||basic_commands.lsp|2024-01-01|basic
+DIMALIGNED|对齐标注||basic_commands.lsp|2024-01-01|basic
+DIMRADIUS|半径标注||basic_commands.lsp|2024-01-01|basic
+DIMDIAMETER|直径标注||basic_commands.lsp|2024-01-01|basic
+DIMANGULAR|角度标注||basic_commands.lsp|2024-01-01|basic
+DIMORDINATE|坐标标注||basic_commands.lsp|2024-01-01|basic
+DIMBASELINE|基线标注||basic_commands.lsp|2024-01-01|basic
+DIMCONTINUE|连续标注||basic_commands.lsp|2024-01-01|basic
+DIMSTYLE|标注样式||basic_commands.lsp|2024-01-01|basic
+DIMEDIT|编辑标注||basic_commands.lsp|2024-01-01|basic
+DIMTEDIT|编辑标注文字位置||basic_commands.lsp|2024-01-01|basic
 
 # === 块和属性 ===
-BLOCK|创建块|B|basic
-WBLOCK|写块|W|basic
-INSERT|插入块|I|basic
-ATTDEF|定义属性|ATT|basic
-ATTDISP|属性显示|ATTDISP|basic
-ATTEDIT|编辑属性|ATE|basic
-BATTMAN|块属性管理器|BATTMAN|basic
-XATTACH|附着外部参照|XA|basic
-XREF|外部参照管理器|XR|basic
+BLOCK|创建块||basic_commands.lsp|2024-01-01|basic
+WBLOCK|写块||basic_commands.lsp|2024-01-01|basic
+INSERT|插入块||basic_commands.lsp|2024-01-01|basic
+ATTDEF|定义属性||basic_commands.lsp|2024-01-01|basic
+ATTDISP|属性显示||basic_commands.lsp|2024-01-01|basic
+ATTEDIT|编辑属性||basic_commands.lsp|2024-01-01|basic
+BATTMAN|块属性管理器||basic_commands.lsp|2024-01-01|basic
+XATTACH|附着外部参照||basic_commands.lsp|2024-01-01|basic
+XREF|外部参照管理器||basic_commands.lsp|2024-01-01|basic
 
 # === 对象捕捉 ===
-OSNAP|对象捕捉设置|OS|basic
-APERTURE|捕捉靶框大小|APERTURE|basic
+OSNAP|对象捕捉设置||basic_commands.lsp|2024-01-01|basic
+APERTURE|捕捉靶框大小||basic_commands.lsp|2024-01-01|basic
 
 # === 单位和精度 ===
-UNITS|设置单位|UN|basic
-DDUNITS|单位对话框|UN|basic
+UNITS|设置单位||basic_commands.lsp|2024-01-01|basic
+DDUNITS|单位对话框||basic_commands.lsp|2024-01-01|basic
 
 # === 边界和面域 ===
-BOUNDARY|创建边界|BO|basic
-REGION|创建面域|REG|basic
-UNION|并集运算|UNI|basic
-SUBTRACT|差集运算|SU|basic
-INTERSECT|交集运算|IN|basic
+BOUNDARY|创建边界||basic_commands.lsp|2024-01-01|basic
+UNION|并集运算||basic_commands.lsp|2024-01-01|basic
+SUBTRACT|差集运算||basic_commands.lsp|2024-01-01|basic
+INTERSECT|交集运算||basic_commands.lsp|2024-01-01|basic
 
 # === 三维建模 ===
-BOX|创建长方体|BOX|advanced
-SPHERE|创建球体|SPH|advanced
-CYLINDER|创建圆柱体|CYL|advanced
-CONE|创建圆锥体|CONE|advanced
-TORUS|创建圆环体|TOR|advanced
-WEDGE|创建楔体|WE|advanced
-PYRAMID|创建棱锥体|PYR|advanced
-EXTRUDE|拉伸实体|EXT|advanced
-REVOLVE|旋转实体|REV|advanced
-SWEEP|扫掠实体|SWEEP|advanced
-LOFT|放样实体|LOFT|advanced
-3DMOVE|三维移动|3M|advanced
-3DROTATE|三维旋转|3R|advanced
-3DSCALE|三维缩放|3S|advanced
-3DALIGN|三维对齐|3AL|advanced
-3DARRAY|三维阵列|3A|advanced
-SUBTRACT|三维差集|SU|advanced
-INTERSECT|三维交集|IN|advanced
-UNION|三维并集|UNI|advanced
-SLICE|剖切实体|SL|advanced
-SECTION|创建截面|SEC|advanced
-SOLIDEDIT|实体编辑|SOLIDEDIT|advanced
+BOX|创建长方体||3d_commands.lsp|2024-01-01|lisp
+SPHERE|创建球体||3d_commands.lsp|2024-01-01|lisp
+CYLINDER|创建圆柱体||3d_commands.lsp|2024-01-01|lisp
+CONE|创建圆锥体||3d_commands.lsp|2024-01-01|lisp
+TORUS|创建圆环体||3d_commands.lsp|2024-01-01|lisp
+WEDGE|创建楔体||3d_commands.lsp|2024-01-01|lisp
+PYRAMID|创建棱锥体||3d_commands.lsp|2024-01-01|lisp
+EXTRUDE|拉伸实体||3d_commands.lsp|2024-01-01|lisp
+REVOLVE|旋转实体||3d_commands.lsp|2024-01-01|lisp
+SWEEP|扫掠实体||3d_commands.lsp|2024-01-01|lisp
+LOFT|放样实体||3d_commands.lsp|2024-01-01|lisp
+3DMOVE|三维移动||3d_commands.lsp|2024-01-01|lisp
+3DROTATE|三维旋转||3d_commands.lsp|2024-01-01|lisp
+3DSCALE|三维缩放||3d_commands.lsp|2024-01-01|lisp
+3DALIGN|三维对齐||3d_commands.lsp|2024-01-01|lisp
+3DARRAY|三维阵列||3d_commands.lsp|2024-01-01|lisp
+SLICE|剖切实体||3d_commands.lsp|2024-01-01|lisp
+SECTION|创建截面||3d_commands.lsp|2024-01-01|lisp
+SOLIDEDIT|实体编辑||3d_commands.lsp|2024-01-01|lisp
 
 # === 曲面建模 ===
-PLANESURF|创建平面曲面|PLANESURF|advanced
-SURFNETWORK|创建网络曲面|SURFNET|advanced
-SURFBLEND|创建过渡曲面|SURFBLEND|advanced
-SURFPATCH|创建修补曲面|SURFPATCH|advanced
-SURFOFFSET|偏移曲面|SURFOFFSET|advanced
-SURFEXTEND|延伸曲面|SURFEXTEND|advanced
-SURFFILLET|创建圆角曲面|SURFFILLET|advanced
-SURFTRIM|修剪曲面|SURFTRIM|advanced
-SURFSCULPT|造型曲面|SURFSCULPT|advanced
+PLANESURF|创建平面曲面||surface_commands.lsp|2024-01-01|lisp
+SURFNETWORK|创建网络曲面||surface_commands.lsp|2024-01-01|lisp
+SURFBLEND|创建过渡曲面||surface_commands.lsp|2024-01-01|lisp
+SURFPATCH|创建修补曲面||surface_commands.lsp|2024-01-01|lisp
+SURFOFFSET|偏移曲面||surface_commands.lsp|2024-01-01|lisp
+SURFEXTEND|延伸曲面||surface_commands.lsp|2024-01-01|lisp
+SURFFILLET|创建圆角曲面||surface_commands.lsp|2024-01-01|lisp
+SURFTRIM|修剪曲面||surface_commands.lsp|2024-01-01|lisp
 
 # === 渲染 ===
-RENDER|渲染|RR|advanced
-RPREF|渲染设置|RPR|advanced
-LIGHT|光源|LIGHT|advanced
-SUN|太阳|SUN|advanced
-MATERIAL|材质|MAT|advanced
-MATBROWSEROPEN|材质浏览器|MATBROWSEROPEN|advanced
-MATEDITOROPEN|材质编辑器|MATEDITOROPEN|advanced
+RENDER|渲染||render_commands.lsp|2024-01-01|lisp
+RPREF|渲染设置||render_commands.lsp|2024-01-01|lisp
+LIGHT|光源||render_commands.lsp|2024-01-01|lisp
+SUN|太阳||render_commands.lsp|2024-01-01|lisp
+MATERIAL|材质||render_commands.lsp|2024-01-01|lisp
 
 # === 打印和输出 ===
-PLOT|打印|PLOT|basic
-PUBLISH|发布|PUB|basic
-EXPORT|导出|EXP|basic
-IMPORT|导入|IMP|basic
-PDFIMPORT|导入PDF|PDFIMPORT|basic
-PDFEXPORT|导出PDF|PDFEXPORT|basic
+PLOT|打印||output_commands.lsp|2024-01-01|lisp
+PUBLISH|发布||output_commands.lsp|2024-01-01|lisp
+EXPORT|导出||output_commands.lsp|2024-01-01|lisp
+IMPORT|导入||output_commands.lsp|2024-01-01|lisp
+PDFIMPORT|导入PDF||output_commands.lsp|2024-01-01|lisp
+PDFEXPORT|导出PDF||output_commands.lsp|2024-01-01|lisp
 
 # === 选择和过滤 ===
-SELECT|选择对象|SELECT|basic
-FILTER|对象选择过滤器|FI|basic
-QSELECT|快速选择|QSELECT|basic
-SELECTSIMILAR|选择类似对象|SELECTSIMILAR|basic
+SELECT|选择对象||basic_commands.lsp|2024-01-01|basic
+FILTER|对象选择过滤器||basic_commands.lsp|2024-01-01|basic
+QSELECT|快速选择||basic_commands.lsp|2024-01-01|basic
+SELECTSIMILAR|选择类似对象||basic_commands.lsp|2024-01-01|basic
 
 # === 组和夹点 ===
-GROUP|创建组|G|basic
-GROUPEDIT|编辑组|GROUPEDIT|basic
-GRIPEDIT|夹点编辑|GRIPEDIT|basic
+GROUP|创建组||basic_commands.lsp|2024-01-01|basic
+GRIPEDIT|夹点编辑||basic_commands.lsp|2024-01-01|basic
 
 # === 属性和块编辑 ===
-BEDIT|块编辑器|BE|basic
-BCLOSE|关闭块编辑器|BC|basic
-BATTORDER|块属性顺序|BATTORDER|basic
-ATTSYNC|同步属性|ATTSYNC|basic
+BEDIT|块编辑器||basic_commands.lsp|2024-01-01|basic
+BCLOSE|关闭块编辑器||basic_commands.lsp|2024-01-01|basic
+ATTSYNC|同步属性||basic_commands.lsp|2024-01-01|basic
 
 # === 文件操作 ===
-NEW|新建文件|NEW|basic
-OPEN|打开文件|OPEN|basic
-SAVE|保存文件|SAVE|basic
-SAVEAS|另存为|SAVEAS|basic
-QSAVE|快速保存|QSAVE|basic
-CLOSE|关闭文件|CLOSE|basic
-QUIT|退出程序|QUIT|basic
+NEW|新建文件||basic_commands.lsp|2024-01-01|basic
+OPEN|打开文件||basic_commands.lsp|2024-01-01|basic
+SAVE|保存文件||basic_commands.lsp|2024-01-01|basic
+SAVEAS|另存为||basic_commands.lsp|2024-01-01|basic
+QSAVE|快速保存||basic_commands.lsp|2024-01-01|basic
+CLOSE|关闭文件||basic_commands.lsp|2024-01-01|basic
+QUIT|退出程序||basic_commands.lsp|2024-01-01|basic
 
 # === 撤销和重做 ===
-UNDO|撤销|U|basic
-REDO|重做|REDO|basic
-OOPS|恢复删除|OOPS|basic
+UNDO|撤销||basic_commands.lsp|2024-01-01|basic
+REDO|重做||basic_commands.lsp|2024-01-01|basic
+OOPS|恢复删除||basic_commands.lsp|2024-01-01|basic
 
 # === 剪贴板 ===
-COPYCLIP|复制到剪贴板|CTRL+C|basic
-PASTECLIP|从剪贴板粘贴|CTRL+V|basic
-CUTCLIP|剪切到剪贴板|CTRL+X|basic
-PASTEORIG|原点粘贴|PASTEORIG|basic
-PASTEBLOCK|粘贴为块|PASTEBLOCK|basic
-PASTEASHYPERLINK|粘贴为超链接|PASTEASHYPERLINK|basic
-PASTESPEC|选择性粘贴|PA|basic
+COPYCLIP|复制到剪贴板||basic_commands.lsp|2024-01-01|basic
+PASTECLIP|从剪贴板粘贴||basic_commands.lsp|2024-01-01|basic
+CUTCLIP|剪切到剪贴板||basic_commands.lsp|2024-01-01|basic
+PASTEORIG|原点粘贴||basic_commands.lsp|2024-01-01|basic
+PASTEBLOCK|粘贴为块||basic_commands.lsp|2024-01-01|basic
+PASTESPEC|选择性粘贴||basic_commands.lsp|2024-01-01|basic
 
 # === 清理和修复 ===
-PURGE|清理未使用项目|PU|basic
-AUDIT|检查图形错误|AUDIT|basic
-RECOVER|修复损坏的图形|RECOVER|basic
-DRAWINGRECOVERY|图形修复管理器|DRAWINGRECOVERY|basic
+PURGE|清理未使用项目||basic_commands.lsp|2024-01-01|basic
+AUDIT|检查图形错误||basic_commands.lsp|2024-01-01|basic
+RECOVER|修复损坏的图形||basic_commands.lsp|2024-01-01|basic
 
 # === 选项和设置 ===
-OPTIONS|选项设置|OP|basic
-CONFIG|配置|CONFIG|basic
-CUSTOMIZE|自定义界面|CUI|basic
-TOOLBAR|工具栏|TO|basic
-MENU|加载菜单|MENU|basic
-SCRIPT|运行脚本|SCRIPT|basic
+OPTIONS|选项设置||basic_commands.lsp|2024-01-01|basic
+CONFIG|配置||basic_commands.lsp|2024-01-01|basic
+CUSTOMIZE|自定义界面||basic_commands.lsp|2024-01-01|basic
+TOOLBAR|工具栏||basic_commands.lsp|2024-01-01|basic
+MENU|加载菜单||basic_commands.lsp|2024-01-01|basic
+SCRIPT|运行脚本||basic_commands.lsp|2024-01-01|basic
 
 # === 辅助功能 ===
-CAL|计算器|CAL|basic
-TIME|显示时间|TIME|basic
-STATUS|显示状态|STATUS|basic
-ABOUT|关于信息|ABOUT|basic
-HELP|帮助信息|F1|basic
-
-# === 用户自定义扩展区域 ===
-# 在此区域添加您自己的命令
-# 格式: 命令名称|描述|快捷键|命令类型
+CAL|计算器||basic_commands.lsp|2024-01-01|basic
+TIME|显示时间||basic_commands.lsp|2024-01-01|basic
+STATUS|显示状态||basic_commands.lsp|2024-01-01|basic
+ABOUT|关于信息||basic_commands.lsp|2024-01-01|basic
+HELP|帮助信息||basic_commands.lsp|2024-01-01|basic

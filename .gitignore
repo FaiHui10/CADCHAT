@@ -23,6 +23,7 @@ wheels/
 # 虚拟环境
 venv/
 env/
+cadchat_env/
 ENV/
 
 # IDE
@@ -41,6 +42,9 @@ temp/
 # Environment specific files (do not commit actual .env files)
 **/.env
 !**/.env.example
+!.env.local
+!.env.aliyun
+!.env.alicloud
 
 # Server specific ignores
 server/__pycache__/
@@ -74,3 +78,6 @@ Desktop.ini
 # 临时文件
 *.tmp
 *.bak
+
+# Browser data
+browser_data/
