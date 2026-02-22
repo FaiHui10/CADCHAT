@@ -149,10 +149,13 @@ pip install requests python-dotenv
 
 3. **启动客户端**
    ```bash
-   # 方法1：使用批处理脚本
-   start_client_updated.bat
+   # 方法1：首次运行（自动安装依赖）
+      start_client_first_time.bat
+      
+   # 方法2：日常使用（环境已配置好）
+      start_client.bat
    
-   # 方法2：直接运行Python脚本
+   # 方法3：直接运行Python脚本
    python main_gui_cloud.py
    ```
 
@@ -211,7 +214,7 @@ pip install requests python-dotenv
 
 2. **启动客户端**
    - 运行 `main_gui_cloud.py`
-   - 或使用 `start_client_updated.bat`
+   - 或使用 `start_client_first_time.bat`
 
 3. **连接 CAD**
    - 确保 CAD 软件已启动

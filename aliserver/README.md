@@ -8,7 +8,8 @@
 aliserver/
 ├── aliyun_bailian_adapter.py    # 阿里云百炼平台适配器
 ├── cloud_server_bailian.py      # 基于百炼平台的Flask服务器
-├── start_server_bailian.bat     # 启动百炼平台服务器脚本
+├── start_server_bailian.bat     # 启动百炼平台服务器脚本（仅本地开发测试用）
+├── test_bailian_deployment.py   # 阿里云部署测试脚本
 ├── Dockerfile                   # Docker构建文件
 ├── docker-compose.yml           # Docker Compose配置
 ├── requirements.txt             # Python依赖
@@ -18,15 +19,21 @@ aliserver/
 ├── autocad_basic_commands.txt   # AutoCAD基础命令库
 ├── lisp_commands.txt           # LISP命令库
 ├── .env.example               # 环境变量配置示例
-├── bailian_ecs_deployment_guide.md # 百炼平台ECS部署指南
-├── deploy_to_aliyun_guide.md      # 部署到阿里云指南
-├── ecs_2c2g_optimization_guide.md # ECS 2核2G优化指南
+├── ALISERVER_GUIDE.md         # 阿里云服务端综合指南
 └── README.md                  # 项目说明文档
 ```
 
-## 部署方式
+## 配置说明
 
-本服务端支持多种部署方式：
+此版本使用阿里云百炼平台的text-embedding-v4模型替代本地Ollama+bge-m3方案，具有以下特点：
+
+- 无需本地大模型部署
+- 云端计算资源，无需高性能硬件
+- 稳定的API服务
+- 支持高并发访问
+- 基于向量相似性的精准匹配
+
+## 部署方式
 
 ### 方式一：直接运行
 
@@ -45,12 +52,21 @@ aliserver/
    ```bash
    # Windows
    start_server_bailian.bat
-   
-   # 或直接运行
-   python cloud_server_bailian.py
    ```
 
-### 方式二：Docker部署
+### 方式二：一键部署（推荐用于ECS）
+
+使用一键部署脚本进行快速部署：
+
+```bash
+# 给部署脚本执行权限
+chmod +x deploy_direct.sh
+
+# 运行部署脚本
+./deploy_direct.sh
+```
+
+### 方式三：Docker部署
 
 1. **构建Docker镜像**
    ```bash
@@ -62,7 +78,7 @@ aliserver/
    docker run -d -p 5000:5000 --env-file .env cadchat-aliyun-server
    ```
 
-### 方式三：Docker Compose部署
+### 方式四：Docker Compose部署
 
 1. **确保已配置环境变量**
    ```bash
@@ -75,49 +91,21 @@ aliserver/
    docker-compose up -d
    ```
 
-### 方式四：阿里云ECS部署
+### 方式五：阿里云ECS部署
 
-将服务部署到阿里云ECS实例，适用于生产环境。详细步骤请参见 `bailian_ecs_deployment_guide.md` 文档。
+将服务部署到阿里云ECS实例，适用于生产环境。详细步骤请参见 `ALISERVER_GUIDE.md` 文档.
 
-## 环境变量配置
+## 测试部署
 
-在 `.env` 文件中配置以下参数：
+使用以下脚本测试阿里云百炼平台连接：
 
-```env
-BAILIAN_APP_ID=your-bailian-app-id
-DASHSCOPE_API_KEY=your-dashscope-api-key
-FLASK_HOST=0.0.0.0
-FLASK_PORT=5000
+```bash
+python test_bailian_deployment.py
 ```
 
-## API接口
+## 注意
 
-服务启动后将在指定端口提供以下API接口：
+- `start_server_bailian.bat` 仅用于本地开发和测试
+- 生产环境部署请参考 [ALISERVER_GUIDE.md](ALISERVER_GUIDE.md) 中的 Docker 部署方式
 
-- `POST /api/query` - 查询CAD命令或代码
-- `POST /api/submit_code` - 提交新的LISP代码
-- `GET /api/health` - 健康检查
-- `GET /api/commands` - 获取命令列表
-- `GET /api/user_codes/list` - 获取用户代码列表
-- `GET /api/user_codes/get/<code_id>` - 获取用户代码内容
-- `DELETE /api/user_codes/delete/<code_id>` - 删除用户代码
-- `POST /api/rebuild_embeddings` - 重建向量索引
-- `GET/POST /api/codes` - 代码管理
-- `GET /api/codes/<int:code_id>` - 获取特定代码
-- `POST /api/user_codes/preview` - 预览用户代码
-
-## 配置说明
-
-此版本使用阿里云百炼平台的text-embedding-v4模型替代本地Ollama+bge-m3方案，具有以下特点：
-
-- 无需本地大模型部署
-- 云端计算资源，无需高性能硬件
-- 稳定的API服务
-- 支持高并发访问
-- 基于向量相似性的精准匹配
-
-## 注意事项
-
-1. 需要有效的阿里云百炼平台账号和API密钥
-2. 网络连接需稳定，因为需要访问云端API
-3. API调用会产生费用，请关注用量
+更多部署详情请参见 [ALISERVER_GUIDE.md](ALISERVER_GUIDE.md)。

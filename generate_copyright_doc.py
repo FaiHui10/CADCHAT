@@ -387,7 +387,7 @@ def create_software_copyright_doc():
         ('11', 'server/lisp_commands.txt', 'LISP命令描述库'),
         ('12', 'server/user_codes/', '用户代码存储目录'),
         ('13', 'server/test_rag.py', 'RAG功能测试脚本'),
-        ('14', 'build_package.py', '项目打包脚本'),
+        
     ]
     
     for i, row_data in enumerate(code_structure):
